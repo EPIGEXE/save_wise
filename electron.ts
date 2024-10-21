@@ -1,7 +1,11 @@
 import path from 'path'
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
+import { AppDataSource, initializeDatabase } from '@/backend/db/database'
+import { Transaction } from '@/backend/db/entity/Transaction'
 
-function createWindow() {
+async function createWindow() {
+  await initializeDatabase()
+
   const win = new BrowserWindow({
     width: 800,
     height: 600,
@@ -16,7 +20,21 @@ function createWindow() {
   } else {
     win.loadFile(path.join(__dirname, 'dist', 'index.html'))
   }
+
+  // IPC 핸들러 설정
+  ipcMain.handle('save-transaction', async (_, transaction) => {
+    const transactionRepository = AppDataSource.getRepository(Transaction)
+    const newTransaction = transactionRepository.create(transaction)
+    await transactionRepository.save(newTransaction)
+    return newTransaction
+  })
+
+  ipcMain.handle('get-transactions', async (_, date) => {
+    const transactionRepository = AppDataSource.getRepository(Transaction)
+    return await transactionRepository.find({ where: { date } })
+  })
 }
+
 
 app.whenReady().then(createWindow)
 
