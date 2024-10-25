@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { PaymentMethod } from "./PaymentMethod.js";
 
 @Entity()
 export class Transaction {
@@ -11,9 +12,19 @@ export class Transaction {
     @Column()
     amount!: number;
 
-    @Column()
+    @Column({ nullable: true })
     description!: string;
 
     @Column()
-    type!: string;
+    type!: "income" | "expense";
+
+    @ManyToOne(() => PaymentMethod, { onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'paymentMethodId' })
+    paymentMethod?: PaymentMethod;
+
+    @Column({ nullable: true })
+    paymentMethodId?: number;
+
+    @Column({ nullable: true })
+    paymentMethodName?: string;
 }

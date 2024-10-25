@@ -1,14 +1,16 @@
 import { DataSource } from "typeorm"
-import { Transaction } from "./entity/Transaction"
+import { Transaction } from "./entity/Transaction.js"
 import path from 'path'
 import { app } from 'electron'
+import { PaymentMethod } from "./entity/PaymentMethod.js"
+import { Asset } from "./entity/Asset.js"
 
 const dbPath = path.join(app.getPath('userData'), 'database.sqlite')
 
 export const AppDataSource = new DataSource({
   type: "sqlite",
   database: dbPath,
-  entities: [Transaction],
+  entities: [Transaction, PaymentMethod, Asset],
   synchronize: true,
   logging: false
 })

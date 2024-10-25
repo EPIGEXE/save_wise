@@ -1,12 +1,14 @@
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styled, { css, keyframes } from 'styled-components';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+
+const { ipcRenderer } = window;
 
 interface Transaction {
     id: string;
@@ -195,6 +197,21 @@ const CustomToolbar = ({ date, onNavigate, triggerAnimation }) => {
     const [transactions, setTransactions] = useState<Record<string, Transaction[]>>({});
 
 
+    useEffect(() => {
+        fetchTransaction()
+    }, [])
+
+    const fetchTransaction = async () => {
+        try {
+            const fetchedTransactions = await ipcRenderer.invoke('get-all-transaction')
+            setTransactions(fetchedTransactions)
+        } catch (error) {
+            console.error('거래를 불러오는데 실패했습니다', error)
+        }
+    }
+
+
+
     const triggerAnimation = useCallback(() => {
         if (animationTimeoutRef.current) {
             clearTimeout(animationTimeoutRef.current);
@@ -239,32 +256,36 @@ const CustomToolbar = ({ date, onNavigate, triggerAnimation }) => {
         setCurrentTransaction(prev => ({ ...prev, type: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (currentTransaction.amount && selectedDate) {
-          if (editMode) {
-            setTransactions(prev => ({
-              ...prev,
-              [selectedDate]: prev[selectedDate].map(trans => 
-                trans.id === currentTransaction.id ? currentTransaction : trans
-              )
-            }));
-          } else {
-            const newTransaction = { ...currentTransaction, id: Date.now().toString() };
-            setTransactions(prev => ({
-              ...prev,
-              [selectedDate]: [...(prev[selectedDate] || []), newTransaction]
-            }));
-          }
-          handleCloseModal();
+            try {
+                if (editMode) {
+                    await ipcRenderer.invoke('update-transaction', currentTransaction);
+                } else {
+                    await ipcRenderer.invoke('create-transaction', {
+                        [selectedDate]: [currentTransaction]
+                    });
+                }
+                await fetchTransaction();
+                handleCloseModal();
+            } catch (error) {
+                console.error(`거래를 ${editMode ? '수정' : '저장'}하는데 실패했습니다`, error);
+            }
         }
     };
+
+    const handleDeleteTransaction = async () => {
+        await ipcRenderer.invoke('delete-transaction', currentTransaction);
+        await fetchTransaction();
+        handleCloseModal();
+    }
 
     const events = Object.entries(transactions).flatMap(([date, dayTransactions]) =>
         dayTransactions.map(transaction => ({
           start: new Date(date),
           end: new Date(date),
-          title: `${transaction.type === 'income' ? '+' : '-'}${transaction.amount.toLocaleString()}원 - ${transaction.description}`,
+          title: `${transaction.type === 'income' ? '+' : '-'}${transaction.amount?.toLocaleString()}원 - ${transaction.description}`,
           resource: transaction,
         }))
       );
@@ -340,6 +361,9 @@ const CustomToolbar = ({ date, onNavigate, triggerAnimation }) => {
                         className="mb-4"
                     />
                     <DialogFooter>
+                    <Button type="button" variant="destructive" onClick={handleDeleteTransaction}>
+                        삭제
+                    </Button>
                     <Button type="button" variant="outline" onClick={handleCloseModal}>
                         취소
                     </Button>

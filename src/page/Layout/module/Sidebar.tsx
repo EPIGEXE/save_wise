@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Nav } from "./Nav"
-import { Inbox } from "lucide-react"
+import { Inbox, Settings } from "lucide-react"
 
 interface SidebarProps {
     isCollapsed: boolean
@@ -28,10 +28,16 @@ const Sidebar = ({isCollapsed, setIsCollapsed}: SidebarProps) => {
                 isCollapsed={isCollapsed} 
                 links={[
                     {
-                        title: "연간 온실가스 발생량",
+                        title: "가계부 캘린더",
                         to: "/",
                         icon: Inbox,
                         variant: "default",
+                    },
+                    {
+                        title: "설정",
+                        to: "/setting",
+                        icon: Settings,
+                        variant: "ghost",
                     },
                     // {
                     //     title: "온실가스 발생 비교",

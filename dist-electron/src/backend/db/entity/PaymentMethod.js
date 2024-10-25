@@ -7,41 +7,31 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { PaymentMethod } from "./PaymentMethod.js";
-let Transaction = class Transaction {
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+let PaymentMethod = class PaymentMethod {
 };
 __decorate([
     PrimaryGeneratedColumn(),
     __metadata("design:type", Number)
-], Transaction.prototype, "id", void 0);
+], PaymentMethod.prototype, "id", void 0);
 __decorate([
     Column(),
     __metadata("design:type", String)
-], Transaction.prototype, "date", void 0);
+], PaymentMethod.prototype, "name", void 0);
 __decorate([
     Column(),
+    __metadata("design:type", String)
+], PaymentMethod.prototype, "type", void 0);
+__decorate([
+    Column({ type: 'int' }),
     __metadata("design:type", Number)
-], Transaction.prototype, "amount", void 0);
+], PaymentMethod.prototype, "paymentDay", void 0);
 __decorate([
     Column({ nullable: true }),
     __metadata("design:type", String)
-], Transaction.prototype, "description", void 0);
-__decorate([
-    Column(),
-    __metadata("design:type", String)
-], Transaction.prototype, "type", void 0);
-__decorate([
-    ManyToOne(() => PaymentMethod),
-    JoinColumn({ name: 'paymentMethodId' }),
-    __metadata("design:type", PaymentMethod)
-], Transaction.prototype, "paymentMethod", void 0);
-__decorate([
-    Column({ nullable: true }),
-    __metadata("design:type", Number)
-], Transaction.prototype, "paymentMethodId", void 0);
-Transaction = __decorate([
+], PaymentMethod.prototype, "description", void 0);
+PaymentMethod = __decorate([
     Entity()
-], Transaction);
-export { Transaction };
-//# sourceMappingURL=Transaction.js.map
+], PaymentMethod);
+export { PaymentMethod };
+//# sourceMappingURL=PaymentMethod.js.map

@@ -10,7 +10,18 @@ const Layout = ({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCo
                 <header className='bg-gray-800 text-white p-4 h-16 flex items-center'>header</header>
                 <div className='relative flex flex-1'>
                     <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-                    <Outlet />
+                    <div className='flex flex-col flex-1'>
+                        <main
+                            className={`
+                            max-h-[calc(100vh-4rem)]
+                            overflow-y-auto
+                            transition-all duration-300 ease-in-out 
+                            flex flex-col flex-1 p-3 ${isCollapsed ? 'pl-[75px]' : 'pl-[250px]'}
+                            `}
+                        >
+                            <Outlet />
+                        </main>
+                    </div>
                 </div>
             </div>
         </TooltipProvider>
