@@ -1,5 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { PaymentMethod } from "./PaymentMethod.js";
+import { IncomeCategory } from "./IncomeCategory.js";
+import { ExpenseCategory } from "./ExpenseCategory.js";
 
 @Entity()
 export class Transaction {
@@ -25,6 +27,19 @@ export class Transaction {
     @Column({ nullable: true })
     paymentMethodId?: number;
 
+    paymentDay?: number;
+
+    @ManyToOne(() => IncomeCategory, category => category.transactions, { onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'incomeCategoryId' })
+    incomeCategory?: IncomeCategory;
+
     @Column({ nullable: true })
-    paymentMethodName?: string;
+    incomeCategoryId?: number;
+
+    @ManyToOne(() => ExpenseCategory, category => category.transactions, { onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'expenseCategoryId' })
+    expenseCategory?: ExpenseCategory;
+
+    @Column({ nullable: true })
+    expenseCategoryId?: number;
 }

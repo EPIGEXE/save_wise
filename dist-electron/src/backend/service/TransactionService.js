@@ -1,14 +1,13 @@
-import { Transaction } from "../db/entity/Transaction.js";
-import { AppDataSource } from "../db/database.js";
 import { logger } from "../util/logger.js";
+import { TransactionRepository } from "../repository/TransactionRepository.js";
 export default class TransactionService {
-    constructor() {
-        this.transactionRepository = AppDataSource.getRepository(Transaction);
+    constructor(dataSource) {
+        this.transactionRepository = new TransactionRepository(dataSource);
     }
     async getAllTransaction() {
         try {
             // logger.info("거래 목록 조회 시작");
-            const transactions = await this.transactionRepository.find();
+            const transactions = await this.transactionRepository.findAllWithPaymentMethod();
             // logger.info(`${transactions.length}개의 거래 조회 완료`);
             return this.convertToDto(transactions);
         }
@@ -35,23 +34,26 @@ export default class TransactionService {
             throw new Error("새 거래를 생성하는 데 실패했습니다.");
         }
     }
-    async deleteTransaction(transaction) {
-        try {
-            const delectTransactionId = transaction.id;
-            await this.transactionRepository.delete(delectTransactionId);
-        }
-        catch (error) {
-            logger.error("거래 삭제 중 오류 발생", error);
-            throw new Error("거래를 삭제하는 데 실패했습니다.");
-        }
-    }
     async updateTransaction(transaction) {
         try {
+            // logger.info("거래 수정 시작", { data: transaction });
             await this.transactionRepository.update(transaction.id, transaction);
+            // logger.info("거래 수정 완료", { id: transaction.id });
         }
         catch (error) {
             logger.error("거래 수정 중 오류 발생", error);
             throw new Error("거래를 수정하는 데 실패했습니다.");
+        }
+    }
+    async deleteTransaction(transaction) {
+        try {
+            // logger.info("거래 삭제 시작", { id: delectTransactionId });
+            await this.transactionRepository.delete(transaction.id);
+            // logger.info("거래 삭제 완료", { id: delectTransactionId });
+        }
+        catch (error) {
+            logger.error("거래 삭제 중 오류 발생", error);
+            throw new Error("거래를 삭제하는 데 실패했습니다.");
         }
     }
     convertToDto(transactionList) {
@@ -65,7 +67,11 @@ export default class TransactionService {
                 id: transaction.id,
                 amount: transaction.amount,
                 description: transaction.description,
-                type: transaction.type
+                type: transaction.type,
+                paymentMethodId: transaction.paymentMethodId || null,
+                paymentMethod: transaction.paymentMethod || undefined,
+                incomeCategoryId: transaction.incomeCategoryId || undefined,
+                expenseCategoryId: transaction.expenseCategoryId || undefined
             });
         });
         return formatted;
@@ -78,7 +84,10 @@ export default class TransactionService {
                     date: new Date(dateString).toISOString(),
                     amount: transaction.amount,
                     description: transaction.description,
-                    type: transaction.type
+                    type: transaction.type,
+                    paymentMethodId: transaction.paymentMethodId || undefined,
+                    incomeCategoryId: transaction.incomeCategoryId || undefined,
+                    expenseCategoryId: transaction.expenseCategoryId || undefined
                 });
             }
         }

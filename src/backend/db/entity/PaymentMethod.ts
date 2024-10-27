@@ -11,7 +11,7 @@ export class PaymentMethod {
     @Column()
     type!: "cash" | "credit";
 
-    @Column({ type: 'int' })
+    @Column({ type: 'int', nullable: true })
     paymentDay!: number;
 
     @Column({ nullable: true })

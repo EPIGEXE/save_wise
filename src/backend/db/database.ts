@@ -4,15 +4,18 @@ import path from 'path'
 import { app } from 'electron'
 import { PaymentMethod } from "./entity/PaymentMethod.js"
 import { Asset } from "./entity/Asset.js"
+import { IncomeCategory } from "./entity/IncomeCategory.js"
+import { ExpenseCategory } from "./entity/ExpenseCategory.js"
 
 const dbPath = path.join(app.getPath('userData'), 'database.sqlite')
 
 export const AppDataSource = new DataSource({
   type: "sqlite",
   database: dbPath,
-  entities: [Transaction, PaymentMethod, Asset],
+  entities: [Transaction, PaymentMethod, Asset, IncomeCategory, ExpenseCategory],
   synchronize: true,
-  logging: false
+  logging: false,
+  // logger: "advanced-console"
 })
 
 export const initializeDatabase = async () => {

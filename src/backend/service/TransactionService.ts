@@ -1,12 +1,19 @@
 import { Transaction } from "../db/entity/Transaction.js";
-import { AppDataSource } from "../db/database.js";
 import { logger } from "../util/logger.js";
+import { TransactionRepository } from "../repository/TransactionRepository.js";
+import { DataSource } from "typeorm";
 
 interface TransactionItem {
     id?: number;
     amount: number;
     description: string;
     type: 'income' | 'expense';
+    paymentMethodId: number | null;
+    paymentMethod?: {
+        paymentDay?: number;
+    };
+    incomeCategoryId?: number;
+    expenseCategoryId?: number;
 }
 
 interface TransactionDto {
@@ -14,12 +21,16 @@ interface TransactionDto {
 }
 
 export default class TransactionService {
-    private transactionRepository = AppDataSource.getRepository(Transaction)
+    private transactionRepository: TransactionRepository;
+
+    constructor(dataSource: DataSource) {
+        this.transactionRepository = new TransactionRepository(dataSource);
+    }
 
     async getAllTransaction(): Promise<TransactionDto> {
         try {
             // logger.info("거래 목록 조회 시작");
-            const transactions = await this.transactionRepository.find();
+            const transactions = await this.transactionRepository.findAllWithPaymentMethod();
             // logger.info(`${transactions.length}개의 거래 조회 완료`);
             return this.convertToDto(transactions);
           } catch (error) {
@@ -48,22 +59,25 @@ export default class TransactionService {
         }
     }
 
-    async deleteTransaction(transaction: Transaction): Promise<void> {
-        try {
-            const delectTransactionId = transaction.id;
-            await this.transactionRepository.delete(delectTransactionId);
-        } catch (error) {
-            logger.error("거래 삭제 중 오류 발생", error);
-            throw new Error("거래를 삭제하는 데 실패했습니다.");
-        }
-    }
-
     async updateTransaction(transaction: Transaction): Promise<void> {
         try {
+            // logger.info("거래 수정 시작", { data: transaction });
             await this.transactionRepository.update(transaction.id, transaction);
+            // logger.info("거래 수정 완료", { id: transaction.id });
         } catch (error) {
             logger.error("거래 수정 중 오류 발생", error);
             throw new Error("거래를 수정하는 데 실패했습니다.");
+        }
+    }
+
+    async deleteTransaction(transaction: Transaction): Promise<void> {
+        try {
+            // logger.info("거래 삭제 시작", { id: delectTransactionId });
+            await this.transactionRepository.delete(transaction.id);
+            // logger.info("거래 삭제 완료", { id: delectTransactionId });
+        } catch (error) {
+            logger.error("거래 삭제 중 오류 발생", error);
+            throw new Error("거래를 삭제하는 데 실패했습니다.");
         }
     }
 
@@ -79,7 +93,11 @@ export default class TransactionService {
                 id: transaction.id,
                 amount: transaction.amount,
                 description: transaction.description,
-                type: transaction.type as 'income' | 'expense'
+                type: transaction.type as 'income' | 'expense',
+                paymentMethodId: transaction.paymentMethodId || null,
+                paymentMethod: transaction.paymentMethod || undefined,
+                incomeCategoryId: transaction.incomeCategoryId || undefined,
+                expenseCategoryId: transaction.expenseCategoryId || undefined
             });
         });
         return formatted;
@@ -94,7 +112,10 @@ export default class TransactionService {
                     date: new Date(dateString).toISOString(),
                     amount: transaction.amount,
                     description: transaction.description,
-                    type: transaction.type
+                    type: transaction.type,
+                    paymentMethodId: transaction.paymentMethodId || undefined,
+                    incomeCategoryId: transaction.incomeCategoryId || undefined,
+                    expenseCategoryId: transaction.expenseCategoryId || undefined
                 });
             }
         }

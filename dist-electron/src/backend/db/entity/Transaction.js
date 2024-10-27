@@ -9,6 +9,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { PaymentMethod } from "./PaymentMethod.js";
+import { IncomeCategory } from "./IncomeCategory.js";
+import { ExpenseCategory } from "./ExpenseCategory.js";
 let Transaction = class Transaction {
 };
 __decorate([
@@ -32,7 +34,7 @@ __decorate([
     __metadata("design:type", String)
 ], Transaction.prototype, "type", void 0);
 __decorate([
-    ManyToOne(() => PaymentMethod),
+    ManyToOne(() => PaymentMethod, { onDelete: 'SET NULL' }),
     JoinColumn({ name: 'paymentMethodId' }),
     __metadata("design:type", PaymentMethod)
 ], Transaction.prototype, "paymentMethod", void 0);
@@ -40,6 +42,24 @@ __decorate([
     Column({ nullable: true }),
     __metadata("design:type", Number)
 ], Transaction.prototype, "paymentMethodId", void 0);
+__decorate([
+    ManyToOne(() => IncomeCategory, category => category.transactions, { onDelete: 'SET NULL' }),
+    JoinColumn({ name: 'incomeCategoryId' }),
+    __metadata("design:type", IncomeCategory)
+], Transaction.prototype, "incomeCategory", void 0);
+__decorate([
+    Column({ nullable: true }),
+    __metadata("design:type", Number)
+], Transaction.prototype, "incomeCategoryId", void 0);
+__decorate([
+    ManyToOne(() => ExpenseCategory, category => category.transactions, { onDelete: 'SET NULL' }),
+    JoinColumn({ name: 'expenseCategoryId' }),
+    __metadata("design:type", ExpenseCategory)
+], Transaction.prototype, "expenseCategory", void 0);
+__decorate([
+    Column({ nullable: true }),
+    __metadata("design:type", Number)
+], Transaction.prototype, "expenseCategoryId", void 0);
 Transaction = __decorate([
     Entity()
 ], Transaction);
