@@ -20,7 +20,8 @@ export default class PaymentMethodService {
     async createPaymentMethod(paymentMethod: PaymentMethod): Promise<PaymentMethod> {
         try {
             // logger.info("새 결제 방법 생성 시작", { data: paymentMethod });
-            const newPaymentMethod = await this.paymentMethodRepository.save(paymentMethod);
+            const { id, ...paymentMethodWithoutId } = paymentMethod;
+            const newPaymentMethod = await this.paymentMethodRepository.save(paymentMethodWithoutId);
             // logger.info("새 결제 방법 생성 완료", { id: newPaymentMethod.id });
             return newPaymentMethod;
         } catch (error) {

@@ -24,7 +24,13 @@
       "@/*": [
         "./src/*"
       ]
-    }
+    },
+
+    /* 데코레이터 설정 추가 */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false
+    
   },
   "include": ["src"]
 }

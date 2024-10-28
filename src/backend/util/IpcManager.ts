@@ -1,11 +1,16 @@
 import { ipcMain, IpcMainInvokeEvent } from "electron";
 import { logger } from "../util/logger.js";
-import TransactionService from "../service/TransactionService.js";
+import TransactionService, { TransactionDto } from "../service/TransactionService.js";
 import PaymentMethodService from "../service/PaymentMethodService.js";
 import AssetService from "../service/AssetService.js";
 import { DataSource } from "typeorm";
 import IncomeCategoryService from "../service/IncomCategoryService.js";
 import ExpenseCategoryService from "../service/ExpenseCategory.js";
+import { Transaction } from "../db/entity/Transaction.js";
+import { PaymentMethod } from "../db/entity/PaymentMethod.js";
+import { Asset } from "../db/entity/Asset.js";
+import { IncomeCategory } from "../db/entity/IncomeCategory.js";
+import { ExpenseCategory } from "../db/entity/ExpenseCategory.js";
 
 export class IpcManager {
   private transactionService: TransactionService;
@@ -49,7 +54,7 @@ export class IpcManager {
     ipcMain.handle('delete-expensecategory', this.deleteExpenseCategory.bind(this));
   }
 
-  private async createTransaction(_: IpcMainInvokeEvent, transactionData: any) {
+  private async createTransaction(_: IpcMainInvokeEvent, transactionData: TransactionDto) {
     try {
       logger.info('IPC: 새 거래 생성 요청', { data: transactionData });
       return await this.transactionService.createTransaction(transactionData);
@@ -70,7 +75,7 @@ export class IpcManager {
     }
   }
 
-  private async updateTransaction(_: IpcMainInvokeEvent, transactionData: any) {
+  private async updateTransaction(_: IpcMainInvokeEvent, transactionData: Transaction) {
     try {
       logger.info('IPC: 거래 수정 요청', { data: transactionData });
       await this.transactionService.updateTransaction(transactionData);
@@ -80,7 +85,7 @@ export class IpcManager {
     }
   }
 
-  private async deleteTransaction(_: IpcMainInvokeEvent, transactionData: any) {
+  private async deleteTransaction(_: IpcMainInvokeEvent, transactionData: Transaction) {
     try {
       logger.info('IPC: 거래 삭제 요청', { data: transactionData });
       await this.transactionService.deleteTransaction(transactionData);
@@ -101,18 +106,17 @@ export class IpcManager {
     }
   } 
 
-  private async createPaymentMethod(_: IpcMainInvokeEvent, paymentMethodData: any) {
+  private async createPaymentMethod(_: IpcMainInvokeEvent, paymentMethodData: PaymentMethod) {
     try {
-      const { id, ...paymentMethodWithoutId } = paymentMethodData;
-      logger.info('IPC: 새 결제 방법 생성 요청', { data: paymentMethodWithoutId });
-      return await this.paymentMethodService.createPaymentMethod(paymentMethodWithoutId);
+      logger.info('IPC: 새 결제 방법 생성 요청', { data: paymentMethodData });
+      return await this.paymentMethodService.createPaymentMethod(paymentMethodData);
     } catch (error) {
       logger.error('IPC: 새 결제 방법 생성 중 오류 발생', error);
       throw error;
     }
   }
 
-  private async updatePaymentMethod(_: IpcMainInvokeEvent, paymentMethodData: any) {
+  private async updatePaymentMethod(_: IpcMainInvokeEvent, paymentMethodData: PaymentMethod) {
     try {
       logger.info('IPC: 결제 방법 수정 요청', { data: paymentMethodData });
       await this.paymentMethodService.updatePaymentMethod(paymentMethodData);
@@ -122,7 +126,7 @@ export class IpcManager {
     }
   }
 
-  private async deletePaymentMethod(_: IpcMainInvokeEvent, paymentMethodData: any) {
+  private async deletePaymentMethod(_: IpcMainInvokeEvent, paymentMethodData: PaymentMethod) {
     try {
       logger.info('IPC: 결제 방법 삭제 요청', { data: paymentMethodData });
       await this.paymentMethodService.deletePaymentMethod(paymentMethodData);
@@ -143,18 +147,17 @@ export class IpcManager {
     }
   }
 
-  private async createAsset(_: IpcMainInvokeEvent, assetData: any) {
+  private async createAsset(_: IpcMainInvokeEvent, assetData: Asset) {
     try {
       logger.info('IPC: 새 자산 생성 요청', { data: assetData });
-      const { id, ...assetWithoutId } = assetData;
-      return await this.assetService.createAsset(assetWithoutId);
+      return await this.assetService.createAsset(assetData);
     } catch (error) {
       logger.error('IPC: 새 자산 생성 중 오류 발생', error);
       throw error;
     }
   } 
 
-  private async updateAsset(_: IpcMainInvokeEvent, assetData: any) {
+  private async updateAsset(_: IpcMainInvokeEvent, assetData: Asset) {
     try {
       logger.info('IPC: 자산 수정 요청', { data: assetData });
       await this.assetService.updateAsset(assetData);
@@ -164,7 +167,7 @@ export class IpcManager {
     }
   } 
 
-  private async deleteAsset(_: IpcMainInvokeEvent, assetData: any) {
+  private async deleteAsset(_: IpcMainInvokeEvent, assetData: Asset) {
     try {
       logger.info('IPC: 자산 삭제 요청', { data: assetData });
       await this.assetService.deleteAsset(assetData);
@@ -185,18 +188,17 @@ export class IpcManager {
     }
   }
 
-  private async createIncomeCategory(_: IpcMainInvokeEvent, incomeCategoryData: any) {
+  private async createIncomeCategory(_: IpcMainInvokeEvent, incomeCategoryData: IncomeCategory) {
     try {
       logger.info('IPC: 새 수입 카테고리 생성 요청', { data: incomeCategoryData });
-      const { id, ...incomeCategoryWithoutId } = incomeCategoryData;
-      return await this.incomeCategoryService.createIncomeCategory(incomeCategoryWithoutId);
+      return await this.incomeCategoryService.createIncomeCategory(incomeCategoryData);
     } catch (error) {
       logger.error('IPC: 새 수입 카테고리 생성 중 오류 발생', error);
       throw error;
     }
   }
 
-  private async updateIncomeCategory(_: IpcMainInvokeEvent, incomeCategoryData: any) {
+  private async updateIncomeCategory(_: IpcMainInvokeEvent, incomeCategoryData: IncomeCategory) {
     try {
       logger.info('IPC: 수입 카테고리 수정 요청', { data: incomeCategoryData });
       await this.incomeCategoryService.updateIncomeCategory(incomeCategoryData);
@@ -206,7 +208,7 @@ export class IpcManager {
     }
   } 
 
-  private async deleteIncomeCategory(_: IpcMainInvokeEvent, incomeCategoryData: any) {
+  private async deleteIncomeCategory(_: IpcMainInvokeEvent, incomeCategoryData: IncomeCategory) {
     try {
       logger.info('IPC: 수입 카테고리 삭제 요청', { data: incomeCategoryData });
       await this.incomeCategoryService.deleteIncomeCategory(incomeCategoryData);
@@ -227,18 +229,17 @@ export class IpcManager {
     }
   }
 
-  private async createExpenseCategory(_: IpcMainInvokeEvent, expenseCategoryData: any) {
+  private async createExpenseCategory(_: IpcMainInvokeEvent, expenseCategoryData: ExpenseCategory) {
     try {
       logger.info('IPC: 새 지출 카테고리 생성 요청', { data: expenseCategoryData });
-      const { id, ...expenseCategoryWithoutId } = expenseCategoryData;
-      return await this.expenseCategoryService.createExpenseCategory(expenseCategoryWithoutId);
+      return await this.expenseCategoryService.createExpenseCategory(expenseCategoryData);
     } catch (error) {
       logger.error('IPC: 새 지출 카테고리 생성 중 오류 발생', error);
       throw error;
     }
   }
 
-  private async updateExpenseCategory(_: IpcMainInvokeEvent, expenseCategoryData: any) {
+  private async updateExpenseCategory(_: IpcMainInvokeEvent, expenseCategoryData: ExpenseCategory) {
     try {
       logger.info('IPC: 지출 카테고리 수정 요청', { data: expenseCategoryData });
       await this.expenseCategoryService.updateExpenseCategory(expenseCategoryData);
@@ -248,7 +249,7 @@ export class IpcManager {
     }
   }
 
-  private async deleteExpenseCategory(_: IpcMainInvokeEvent, expenseCategoryData: any) {
+  private async deleteExpenseCategory(_: IpcMainInvokeEvent, expenseCategoryData: ExpenseCategory) {
     try {
       logger.info('IPC: 지출 카테고리 삭제 요청', { data: expenseCategoryData });
       await this.expenseCategoryService.deleteExpenseCategory(expenseCategoryData);

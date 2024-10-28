@@ -20,14 +20,12 @@ export class Transaction {
     @Column()
     type!: "income" | "expense";
 
-    @ManyToOne(() => PaymentMethod, { onDelete: 'SET NULL' })
+    @ManyToOne(() => PaymentMethod, { onDelete: 'SET NULL', eager: true })
     @JoinColumn({ name: 'paymentMethodId' })
     paymentMethod?: PaymentMethod;
 
     @Column({ nullable: true })
     paymentMethodId?: number;
-
-    paymentDay?: number;
 
     @ManyToOne(() => IncomeCategory, category => category.transactions, { onDelete: 'SET NULL' })
     @JoinColumn({ name: 'incomeCategoryId' })

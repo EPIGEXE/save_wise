@@ -2,6 +2,7 @@ import { Transaction } from "../db/entity/Transaction.js";
 import { logger } from "../util/logger.js";
 import { TransactionRepository } from "../repository/TransactionRepository.js";
 import { DataSource } from "typeorm";
+import { PaymentMethod } from "../db/entity/PaymentMethod.js";
 
 interface TransactionItem {
     id?: number;
@@ -9,14 +10,12 @@ interface TransactionItem {
     description: string;
     type: 'income' | 'expense';
     paymentMethodId: number | null;
-    paymentMethod?: {
-        paymentDay?: number;
-    };
+    paymentMethod?: PaymentMethod;
     incomeCategoryId?: number;
     expenseCategoryId?: number;
 }
 
-interface TransactionDto {
+export interface TransactionDto {
     [date: string]: TransactionItem[];
 }
 
@@ -30,7 +29,7 @@ export default class TransactionService {
     async getAllTransaction(): Promise<TransactionDto> {
         try {
             // logger.info("거래 목록 조회 시작");
-            const transactions = await this.transactionRepository.findAllWithPaymentMethod();
+            const transactions = await this.transactionRepository.find();
             // logger.info(`${transactions.length}개의 거래 조회 완료`);
             return this.convertToDto(transactions);
           } catch (error) {

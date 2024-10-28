@@ -19,7 +19,8 @@ export default class ExpenseCategoryService {
     async createExpenseCategory(expenseCategory: ExpenseCategory): Promise<ExpenseCategory> {
         try {
             // logger.info("카테고리 생성 시작", { data: expenseCategory });
-            const newExpenseCategory = await this.expenseCategoryRepository.save(expenseCategory);
+            const { id, ...expenseCategoryWithoutId } = expenseCategory;
+            const newExpenseCategory = await this.expenseCategoryRepository.save(expenseCategoryWithoutId);
             // logger.info("카테고리 생성 완료", { id: newExpenseCategory.id });
             return newExpenseCategory;
         } catch (error) {
@@ -39,10 +40,10 @@ export default class ExpenseCategoryService {
         }
     }
 
-    async deleteExpenseCategory(id: number): Promise<void> {
+    async deleteExpenseCategory(expenseCategory: ExpenseCategory): Promise<void> {
         try {
             // logger.info("카테고리 삭제 시작", { id });
-            await this.expenseCategoryRepository.delete(id);
+            await this.expenseCategoryRepository.delete(expenseCategory.id);
             // logger.info("카테고리 삭제 완료");
         } catch (error) {
             logger.error("카테고리 삭제 중 오류 발생", error);

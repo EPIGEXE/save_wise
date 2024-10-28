@@ -1,23 +1,23 @@
 {
     "compilerOptions": {
-      "target": "ES2020",
-      "module": "ES2020",
-      "allowJs": true,
-      "skipLibCheck": true,
-      "esModuleInterop": true,
-      "noImplicitAny": true,
-      "sourceMap": true,
-      "baseUrl": ".",
-      "outDir": "dist-electron",
-      "moduleResolution": "node",
-      "resolveJsonModule": true,
-      "rootDir": ".",
-      "paths": {
+      "target": "ES2020",         // ES2020 버전을 타겟으로 컴파일
+      "module": "ES2020",         // ES2020 모듈 시스템을 사용
+      "allowJs": true,            // JavaScript 파일eh 컴파일 대상에 포함
+      "skipLibCheck": true,       // 라이브러리의 타입 체크를 건너뛰어 빌드 성능 향상
+      "esModuleInterop": true,    // CommonJS 모듈을 ES 모듈 방식으로 import 가능하게 함
+      "noImplicitAny": true,      // 암시적 any 타입 금지
+      "sourceMap": true,          // 디버깅용 소스 맵 생성
+      "baseUrl": ".",             // 모듈 해석 기본 경로 설정
+      "outDir": "dist-electron",  // 컴파일된 파일이 저장될 디렉토리
+      "moduleResolution": "node", // Node.js 모듈 해석기 사용
+      "resolveJsonModule": true,  // JSON 파일을 모듈로 import 가능하게 함
+      "rootDir": ".",             // 소스파일의 루트 디렉토리 지정
+      "paths": {                  // 모듈 경로 별칭 지정
         "*": ["node_modules/*"],
       },
-      "experimentalDecorators": true,
-      "emitDecoratorMetadata": true,
-      "strictPropertyInitialization": false
+      "experimentalDecorators": true, // 데코레이터 문법 사용 가능
+      "emitDecoratorMetadata": true,  // 데코레이터 메타데이터 생성
+      "strictPropertyInitialization": false // 클래스 프로퍼티 초기화 검사 비활성화
     },
-    "include": ["electron.ts"]
+    "include": ["electron.ts"]     // TypeScript 컴파일러가 처리할 파일 지정
   }

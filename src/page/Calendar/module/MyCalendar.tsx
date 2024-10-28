@@ -1,15 +1,14 @@
-import { Calendar, momentLocalizer } from 'react-big-calendar'
+import { Calendar, momentLocalizer, ToolbarProps } from 'react-big-calendar'
 import moment from 'moment'
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import styled, { css, keyframes } from 'styled-components';
+import { useEffect, useState } from 'react';
+import styled from 'styled-components';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { Label } from '../../../components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Toggle } from '@/components/ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const { ipcRenderer } = window;
@@ -23,9 +22,27 @@ interface Transaction {
     paymentMethod?: {
         paymentDay?: number;
     };
-    incomeCategoryId?: number;
-    expenseCategoryId?: number;
+    incomeCategoryId?: number | null | undefined;
+    expenseCategoryId?: number | null | undefined;
 }
+
+interface PaymentMethod {
+    id: number;
+    name: string;
+    paymentDay?: number;
+}
+
+interface IncomeCategory {
+    id: number;
+    name: string;
+}
+
+interface ExpenseCategory {
+    id: number;
+    name: string;
+}
+
+type TransactionType = 'income' | 'expense';
 
 const StyledCalendarWrapper = styled.div`
     .rbc-calendar {
@@ -91,17 +108,29 @@ const StyledCalendarWrapper = styled.div`
     }
 `;
 
-const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayBased }) => {
+interface CalendarEvent {
+    start: Date;
+    end: Date;
+    title: string;
+    resource: Transaction;
+}
+
+interface CustomToolbarProps extends ToolbarProps<CalendarEvent> {
+    handlePaymentDayChange: (checked: boolean) => void;
+    isPaymentDayBased: boolean;
+}
+
+const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayBased }: CustomToolbarProps) => {
     const [year, setYear] = useState(moment(date).year());
     const [month, setMonth] = useState(moment(date).month());
   
-    const handleYearChange = (e) => {
+    const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       const newYear = parseInt(e.target.value);
       setYear(newYear);
       onNavigate('DATE', moment().year(newYear).month(month).toDate());
     };
   
-    const handleMonthChange = (e) => {
+    const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       const newMonth = parseInt(e.target.value);
       setMonth(newMonth);
       onNavigate('DATE', moment().year(year).month(newMonth).toDate());
@@ -184,7 +213,7 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
     const localizer = momentLocalizer(moment);
 
     // UI
-    const [selectedDate, setSelectedDate] = useState(null);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [isPaymentDayBased, setIsPaymentDayBased] = useState(false);
@@ -192,9 +221,9 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
     // Data
     const [currentTransaction, setCurrentTransaction] = useState<Transaction>({ id: '', amount: 0, description: '', type: 'expense', paymentMethodId: null });
     const [transactions, setTransactions] = useState<Record<string, Transaction[]>>({});
-    const [paymentMethods, setPaymentMethods] = useState([]);
-    const [incomeCategories, setIncomeCategories] = useState([]);
-    const [expenseCategories, setExpenseCategories] = useState([]);
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+    const [incomeCategories, setIncomeCategories] = useState<IncomeCategory[]>([]);
+    const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
 
     useEffect(() => {
         fetchTransaction()
@@ -265,11 +294,11 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
         setCurrentTransaction(prev => ({ ...prev, [name]: name === 'amount' ? parseFloat(value) || 0 : value }));
     };
 
-    const handleTypeChange = (value: 'income' | 'expense' | undefined) => {
-        if (value) {  // value가 undefined가 아닐 때만 상태를 업데이트
+    const handleTypeChange = (value: string) => {
+        if (value === 'income' || value === 'expense') {  // 타입 가드
             setCurrentTransaction(prev => ({
                 ...prev,
-                type: value,
+                type: value as TransactionType,
                 paymentMethodId: value === 'expense' ? prev.paymentMethodId : null,
                 incomeCategoryId: value === 'income' ? null : undefined,
                 expenseCategoryId: value === 'expense' ? null : undefined
@@ -277,7 +306,7 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
         }
     };
 
-    const handlePaymentMethodChange = (value) => {
+    const handlePaymentMethodChange = (value: string) => {
         const selectedMethod = paymentMethods.find(method => method.id.toString() === value);
         setCurrentTransaction(prev => ({
             ...prev,
@@ -290,7 +319,9 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
         if (currentTransaction.amount && selectedDate) {
             try {
                 if (editMode) {
-                    await ipcRenderer.invoke('update-transaction', currentTransaction);
+                    const { paymentMethod, ...updateTransaction } = currentTransaction;
+                    console.log(updateTransaction)
+                    await ipcRenderer.invoke('update-transaction', updateTransaction);
                 } else {
                     await ipcRenderer.invoke('create-transaction', {
                         [selectedDate]: [currentTransaction]
@@ -310,7 +341,7 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
         handleCloseModal();
     }
 
-    const handleCategoryChange = (value) => {
+    const handleCategoryChange = (value: string) => {
         setCurrentTransaction(prev => ({
             ...prev,
             incomeCategoryId: prev.type === 'income' ? parseInt(value) : undefined,
@@ -322,7 +353,7 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
         setIsPaymentDayBased(checked);
         if (checked) {
             setTransactions(prev => {
-                const newTransactions = {};
+                const newTransactions: Record<string, Transaction[]> = {};
         
                 Object.entries(prev).forEach(([date, transactions]) => {
                     transactions.forEach(transaction => {
@@ -362,7 +393,7 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
         }))
       );
 
-    const dayPropGetter = (date) => {
+    const dayPropGetter = (date: Date) => {
         const dateString = moment(date).format('YYYY-MM-DD');
         const hasEvent = transactions[dateString] !== undefined;
         return {
@@ -389,7 +420,6 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
                             {...props} 
                             handlePaymentDayChange={handlePaymentDayChange} 
                             isPaymentDayBased={isPaymentDayBased} 
-                            handlePaymentDayChange={handlePaymentDayChange} 
                         />
                     )
                 }}

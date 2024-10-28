@@ -3,6 +3,7 @@ import { app, BrowserWindow } from 'electron'
 import { AppDataSource, initializeDatabase } from './src/backend/db/database.js'
 import { fileURLToPath } from 'url'
 import { IpcManager } from './src/backend/util/IpcManager.js'
+import { installExtension, REACT_DEVELOPER_TOOLS } from 'electron-extension-installer';
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -27,10 +28,17 @@ async function createWindow() {
   
   const ipcManager = new IpcManager(AppDataSource);  
   ipcManager.setupIpcHandlers();
+
 }
 
-
-app.whenReady().then(createWindow)
+app.whenReady().then(async () => {
+  await installExtension(REACT_DEVELOPER_TOOLS, {
+    loadExtensionOptions: {
+      allowFileAccess: true
+    }
+  })
+  createWindow();
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

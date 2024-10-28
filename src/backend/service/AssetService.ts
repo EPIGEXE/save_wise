@@ -19,7 +19,8 @@ export default class AssetService {
     async createAsset(asset: Asset): Promise<Asset> {
         try {
             // logger.info("새 자산 생성 시작", { data: asset });
-            const newAsset = await this.assetRepository.save(asset);
+            const { id, ...assetWithoutId } = asset;
+            const newAsset = await this.assetRepository.save(assetWithoutId);
             // logger.info("새 자산 생성 완료", { id: newAsset.id });
             return newAsset;
         } catch (error) {
