@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Label } from '../../../components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { MonthPicker } from '@/components/custom/MonthPicker';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const { ipcRenderer } = window;
 
@@ -121,67 +123,27 @@ interface CustomToolbarProps extends ToolbarProps<CalendarEvent> {
 }
 
 const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayBased }: CustomToolbarProps) => {
-    const [year, setYear] = useState(moment(date).year());
-    const [month, setMonth] = useState(moment(date).month());
-  
-    const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const newYear = parseInt(e.target.value);
-      setYear(newYear);
-      onNavigate('DATE', moment().year(newYear).month(month).toDate());
-    };
-  
-    const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const newMonth = parseInt(e.target.value);
-      setMonth(newMonth);
-      onNavigate('DATE', moment().year(year).month(newMonth).toDate());
-    };
-    
-    const goToToday = () => {
-        const today = moment();
-        setYear(today.year());
-        setMonth(today.month());
-        onNavigate('DATE', today.toDate());
+
+    const handleMonthChange = (newDate: Date) => {
+      onNavigate('DATE', newDate);
     };
 
-    const goToPreviousMonth = () => {
+    const handlePreviousMonth = () => {
         const newDate = moment(date).subtract(1, 'month');
-        setYear(newDate.year());
-        setMonth(newDate.month());
         onNavigate('DATE', newDate.toDate());
     };
 
-    const goToNextMonth = () => {
+    const handleNextMonth = () => {
         const newDate = moment(date).add(1, 'month');
-        setYear(newDate.year());
-        setMonth(newDate.month());
         onNavigate('DATE', newDate.toDate());
     };
-    
-    const koreanMonths = [
-        '1월', '2월', '3월', '4월', '5월', '6월',
-        '7월', '8월', '9월', '10월', '11월', '12월'
-    ];
   
     return (
-        <div className='flex justify-between items-center mb-4'>
-            <div className="flex gap-2 items-center">
-                <select value={year} onChange={handleYearChange} className="p-2 border rounded">
-                {Array.from({ length: 10 }, (_, i) => year - 5 + i).map(y => (
-                    <option key={y} value={y}>{y}년</option>
-                ))}
-                </select>
-                <select value={month} onChange={handleMonthChange} className="p-2 border rounded">
-                {koreanMonths.map((m, i) => (
-                    <option key={i} value={i}>{m}</option>
-                ))}
-                </select>
-                <button 
-                    onClick={goToToday} 
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                >
-                    오늘
-                </button>
-            </div>
+        <div className="flex items-center justify-between mb-4">
+            <MonthPicker
+                value={date}
+                onValueChange={handleMonthChange}
+            />
             <div className="flex items-center space-x-2">
                 <Switch
                     id="payment-day-mode"
@@ -190,23 +152,18 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
                 />
                 <Label htmlFor="payment-day-mode">결제일 기준</Label>
             </div>
-            <div className="flex gap-2 items-center">
-                <button 
-                    onClick={goToPreviousMonth}
-                    className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-                >
-                    ◀
-                </button>
-                <button 
-                    onClick={goToNextMonth}
-                    className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-                >
-                    ▶
-                </button>
+            <div className="flex gap-2">
+                <Button variant="outline" onClick={handlePreviousMonth}>
+                    <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <Button variant="outline" onClick={handleNextMonth}>
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
             </div>
         </div>
     );
-  };
+};
 
   const MyCalendar = () => {
     moment.locale('ko-KR');
