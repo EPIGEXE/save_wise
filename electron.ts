@@ -4,13 +4,13 @@ import { AppDataSource, initializeDatabase } from './src/backend/db/database.js'
 import { fileURLToPath } from 'url'
 import { IpcManager } from './src/backend/util/IpcManager.js'
 import { installExtension, REACT_DEVELOPER_TOOLS } from 'electron-extension-installer';
+import CreditCardSettlementManager from './src/backend/core/CreditCardSettlementManager.js'
+import { logger } from './src/backend/util/logger.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 async function createWindow() {
-  await initializeDatabase()
-
   const win = new BrowserWindow({
     width: 800,
     height: 600,
@@ -37,6 +37,15 @@ app.whenReady().then(async () => {
       allowFileAccess: true
     }
   })
+
+  try {
+    const dataSource = await initializeDatabase();
+    const creditCardSettlementManager = new CreditCardSettlementManager(dataSource);
+    await creditCardSettlementManager.initialize();
+  } catch (error) {
+    logger.error('CreditCardSettlementManager 초기화 실패', error);
+  }
+
   createWindow();
 })
 

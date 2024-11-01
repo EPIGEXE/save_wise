@@ -6,13 +6,14 @@ import { PaymentMethod } from "./entity/PaymentMethod.js"
 import { Asset } from "./entity/Asset.js"
 import { IncomeCategory } from "./entity/IncomeCategory.js"
 import { ExpenseCategory } from "./entity/ExpenseCategory.js"
+import { CreditCardSettlement } from "./entity/CreditCardSettlement.js"
 
 const dbPath = path.join(app.getPath('userData'), 'database.sqlite')
 
 export const AppDataSource = new DataSource({
   type: "sqlite",
   database: dbPath,
-  entities: [Transaction, PaymentMethod, Asset, IncomeCategory, ExpenseCategory],
+  entities: [Transaction, PaymentMethod, Asset, IncomeCategory, ExpenseCategory, CreditCardSettlement],
   synchronize: true,
   logging: false,
   // logger: "advanced-console"

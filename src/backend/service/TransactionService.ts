@@ -1,8 +1,10 @@
 import { Transaction } from "../db/entity/Transaction.js";
 import { logger } from "../util/logger.js";
 import { TransactionRepository } from "../repository/TransactionRepository.js";
-import { DataSource } from "typeorm";
+import { Between, DataSource } from "typeorm";
 import { PaymentMethod } from "../db/entity/PaymentMethod.js";
+import { AppDataSource } from "../db/database.js";
+import { Asset } from "../db/entity/Asset.js";
 
 interface TransactionItem {
     id?: number;
@@ -21,6 +23,8 @@ export interface TransactionDto {
 
 export default class TransactionService {
     private transactionRepository: TransactionRepository;
+    private assetRepository = AppDataSource.getRepository(Asset);
+    private paymentMethodRepository = AppDataSource.getRepository(PaymentMethod);
 
     constructor(dataSource: DataSource) {
         this.transactionRepository = new TransactionRepository(dataSource);
@@ -39,23 +43,21 @@ export default class TransactionService {
     }
 
     async createTransaction(transactionData: TransactionDto): Promise<Transaction[]> {
-        try {
-            // logger.info("새 거래 생성 시작", { data: transactionData });
+        return AppDataSource.transaction(async transactionalEntityManager => {
             const entities = this.convertToEntity(transactionData);
             const savedTransactions: Transaction[] = [];
     
             for (const entity of entities) {
-                const savedTransaction = await this.transactionRepository.save(entity);
+                const savedTransaction = await transactionalEntityManager.save(Transaction, entity);
+                await this.updateAsset(savedTransaction);
                 savedTransactions.push(savedTransaction);
-                // logger.info("새 거래 생성 완료", { id: savedTransaction.id });
             }
-
-            // logger.info(`총 ${savedTransactions.length}개의 새 거래 생성 완료`);
+    
             return savedTransactions;
-        } catch (error) {
+        }).catch(error => {
             logger.error("거래 생성 중 오류 발생", error);
             throw new Error("새 거래를 생성하는 데 실패했습니다.");
-        }
+        });
     }
 
     async updateTransaction(transaction: Transaction): Promise<void> {
@@ -80,7 +82,73 @@ export default class TransactionService {
         }
     }
 
-    convertToDto(transactionList: Transaction[]): TransactionDto {
+    private async updateAsset(entity: Partial<Transaction>): Promise<void> {
+
+        const paymentMethod = await this.paymentMethodRepository.findOne({
+            where: { id: entity.paymentMethodId }
+        });
+
+        if (entity.type === 'income') {
+            const connectedAsset = await this.assetRepository.findOne({ 
+                where: { id: entity.incomeCategoryId } 
+            });
+            if (connectedAsset && entity.amount) {
+                connectedAsset.amount += entity.amount;
+                await this.assetRepository.save(connectedAsset);
+            }
+        } else if (entity.type === 'expense' && paymentMethod?.type === 'cash') {
+            const connectedAsset = await this.assetRepository.findOne({ 
+                where: { id: entity.expenseCategoryId } 
+            });
+            if (connectedAsset && entity.amount) {
+                connectedAsset.amount -= entity.amount;
+                await this.assetRepository.save(connectedAsset);
+            }
+        }
+    }
+
+    async findAllByMonth(year: number, month: number): Promise<Transaction[]> {
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0);
+        
+        return this.transactionRepository.find({
+            relations: {
+                paymentMethod: true,
+                incomeCategory: true,
+                expenseCategory: true
+            },
+            where: {
+                date: Between(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0])
+            }
+        });
+    }
+
+    async findAllByPreviousMonthAndCredit(year: number, month: number): Promise<Transaction[]> {
+        const startDate = new Date(year, month - 2, 1);
+        const endDate = new Date(year, month - 1, 0);
+        
+        return this.transactionRepository.find({
+            relations: {
+                paymentMethod: true,
+                expenseCategory: true
+            },
+            where: {
+                date: Between(startDate.toISOString(), endDate.toISOString()),
+                type: "expense",
+                paymentMethod: {
+                    type: "credit"
+                }
+            }
+        });
+    }
+
+    async findAllByDateRangeAndPaymentMethod(startDate: Date, endDate: Date, paymentMethodId: number): Promise<Transaction[]> {
+        return this.transactionRepository.find({
+            where: { date: Between(startDate.toISOString(), endDate.toISOString()), paymentMethodId }
+        });
+    }
+
+    private convertToDto(transactionList: Transaction[]): TransactionDto {
         const formatted: TransactionDto = {};
 
         transactionList.forEach((transaction) => {
@@ -102,7 +170,7 @@ export default class TransactionService {
         return formatted;
     }
 
-    convertToEntity(transactionDto: TransactionDto): Partial<Transaction>[] {
+    private convertToEntity(transactionDto: TransactionDto): Partial<Transaction>[] {
         const entities: Partial<Transaction>[] = [];
 
         for (const [dateString, transactions] of Object.entries(transactionDto)) {

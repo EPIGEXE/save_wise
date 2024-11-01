@@ -4,11 +4,20 @@ export default {
     content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
   	extend: {
-  		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
-  		},
+		keyframes: {
+			slideDown: {
+			  from: { height: 0, opacity: 0 },
+			  to: { height: 'var(--radix-collapsible-content-height)', opacity: 1 },
+			},
+			slideUp: {
+			  from: { height: 'var(--radix-collapsible-content-height)', opacity: 1 },
+			  to: { height: 0, opacity: 0 },
+			},
+		},
+		animation: {
+			slideDown: 'slideDown 300ms ease-out',
+			slideUp: 'slideUp 300ms ease-out',
+		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

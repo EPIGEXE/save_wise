@@ -27,14 +27,14 @@ export class Transaction {
     @Column({ nullable: true })
     paymentMethodId?: number;
 
-    @ManyToOne(() => IncomeCategory, category => category.transactions, { onDelete: 'SET NULL' })
+    @ManyToOne(() => IncomeCategory, category => category.transactions, { onDelete: 'SET NULL', eager: true })
     @JoinColumn({ name: 'incomeCategoryId' })
     incomeCategory?: IncomeCategory;
 
     @Column({ nullable: true })
     incomeCategoryId?: number;
 
-    @ManyToOne(() => ExpenseCategory, category => category.transactions, { onDelete: 'SET NULL' })
+    @ManyToOne(() => ExpenseCategory, category => category.transactions, { onDelete: 'SET NULL', eager: true })
     @JoinColumn({ name: 'expenseCategoryId' })
     expenseCategory?: ExpenseCategory;
 
