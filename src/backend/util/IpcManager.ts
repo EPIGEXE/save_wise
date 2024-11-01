@@ -11,6 +11,7 @@ import { PaymentMethod } from "../db/entity/PaymentMethod.js";
 import { Asset } from "../db/entity/Asset.js";
 import { IncomeCategory } from "../db/entity/IncomeCategory.js";
 import { ExpenseCategory } from "../db/entity/ExpenseCategory.js";
+import AnalysisService from "../service/AnalysisService.js";
 
 export class IpcManager {
   private transactionService: TransactionService;
@@ -18,6 +19,7 @@ export class IpcManager {
   private assetService: AssetService;
   private incomeCategoryService: IncomeCategoryService;
   private expenseCategoryService: ExpenseCategoryService;
+  private analysisService: AnalysisService;
 
   constructor(dataSource: DataSource) {
     this.transactionService = new TransactionService(dataSource);
@@ -25,6 +27,7 @@ export class IpcManager {
     this.assetService = new AssetService();
     this.incomeCategoryService = new IncomeCategoryService();
     this.expenseCategoryService = new ExpenseCategoryService();
+    this.analysisService = new AnalysisService(dataSource);
   }
 
   setupIpcHandlers() {
@@ -52,6 +55,9 @@ export class IpcManager {
     ipcMain.handle('create-expensecategory', this.createExpenseCategory.bind(this));
     ipcMain.handle('update-expensecategory', this.updateExpenseCategory.bind(this));
     ipcMain.handle('delete-expensecategory', this.deleteExpenseCategory.bind(this));
+
+    ipcMain.handle('get-transactions-chart-data-by-month', this.getTransactionsChartDataByMonth.bind(this));
+    ipcMain.handle('get-transactions-chart-data-by-payment-day', this.getTransactionsChartDataByPaymentDay.bind(this));
   }
 
   private async createTransaction(_: IpcMainInvokeEvent, transactionData: TransactionDto) {
@@ -258,4 +264,25 @@ export class IpcManager {
       throw error;
     }
   }
+
+  private async getTransactionsChartDataByMonth(_: IpcMainInvokeEvent, year: number, month: number) {
+    try {
+      logger.info('IPC: 월별 거래 차트 데이터 조회 요청', { year, month });
+      return await this.analysisService.getTransactionsChartDataByMonth(year, month);
+    } catch (error) {
+      logger.error('IPC: 월별 거래 차트 데이터 조회 중 오류 발생', error);
+      throw error;
+    }
+  }
+
+  private async getTransactionsChartDataByPaymentDay(_: IpcMainInvokeEvent, year: number, month: number) {
+    try {
+      logger.info('IPC: 결제일별 거래 차트 데이터 조회 요청', { year, month });
+      return await this.analysisService.getTransactionsChartDataByPaymentDay(year, month);
+    } catch (error) {
+      logger.error('IPC: 결제일별 거래 차트 데이터 조회 중 오류 발생', error);
+      throw error;
+    }
+  }
+  
 }
