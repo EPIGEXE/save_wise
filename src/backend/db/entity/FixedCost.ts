@@ -12,5 +12,5 @@ export class FixedCost {
     amount: number;
 
     @Column()
-    type: "cost" | "income"
+    type: "expense" | "income"
 }

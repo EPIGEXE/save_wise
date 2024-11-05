@@ -1,22 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FixedCostSection } from "./module/FixedCostSection";
+import { RootState, useAppDispatch, useAppSelector } from "../Analysis/state/AnalysisStore";
+
+const { ipcRenderer } = window.require('electron');
 
 export default function FixedCostPage() {
-    // 상태 관리
-    const [incomeData, setIncomeData] = useState([
-        { id: 1, name: '급여', value: 3000000, date: 10 },
-        { id: 2, name: '이자수입', value: 100000, date: 15 }
-    ]);
+    const dispatch = useAppDispatch();
     
-    const [expenseData, setExpenseData] = useState([
-        { id: 1, name: '월세', value: 1000000, date: 25 },
-        { id: 2, name: '보험료', value: 150000, date: 15 },
-        { id: 3, name: '통신비', value: 100000, date: 5 }
-    ]);
+    const { 
+        incomeData, 
+        expenseData, 
+    } = useAppSelector((state: RootState) => state.fixedCostData);
 
-    const [editingItem, setEditingItem] = useState<number | null>(null);
-    const [editForm, setEditForm] = useState({ name: '', value: 0, date: 1 });
+    const {
+        editingItem,
+        editForm,
+    } = useAppSelector((state: RootState) => state.fixedCostUI);
+
+    useEffect(() => {
+        fetchFixedCost();
+    }, []);
+
+    const fetchFixedCost = async () => {
+        dispatch(fetchFixedCostData());
+    }
 
     // 차트 설정
     const chartConfig = {
@@ -38,28 +46,13 @@ export default function FixedCostPage() {
     };
 
     const handleDelete = (id: number, type: 'income' | 'expense') => {
-        if (type === 'income') {
-            setIncomeData(prev => prev.filter(item => item.id !== id));
-        } else {
-            setExpenseData(prev => prev.filter(item => item.id !== id));
-        }
+        ipcRenderer.invoke('delete-fixedcost', { id, type });
+        fetchFixedCost();
     };
 
     const handleSave = (id: number, type: 'income' | 'expense') => {
-        const updateData = (prev: any[]) => 
-            prev.map(item => 
-                item.id === id 
-                    ? { ...item, ...editForm }
-                    : item
-            );
-
-        if (type === 'income') {
-            setIncomeData(updateData);
-        } else {
-            setExpenseData(updateData);
-        }
-        
-        setEditingItem(null);
+        ipcRenderer.invoke('update-fixedcost', { id, ...editForm, type });
+        fetchFixedCost();
     };
 
     const handleCancel = () => {

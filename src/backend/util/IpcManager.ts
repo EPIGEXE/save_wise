@@ -12,7 +12,8 @@ import { Asset } from "../db/entity/Asset.js";
 import { IncomeCategory } from "../db/entity/IncomeCategory.js";
 import { ExpenseCategory } from "../db/entity/ExpenseCategory.js";
 import AnalysisService from "../service/AnalysisService.js";
-
+import FixedCostService from "../service/FixedCostService.js";
+import { FixedCost } from "../db/entity/FixedCost.js";
 export class IpcManager {
   private transactionService: TransactionService;
   private paymentMethodService: PaymentMethodService;
@@ -20,6 +21,7 @@ export class IpcManager {
   private incomeCategoryService: IncomeCategoryService;
   private expenseCategoryService: ExpenseCategoryService;
   private analysisService: AnalysisService;
+  private fixedCostService: FixedCostService;
 
   constructor(dataSource: DataSource) {
     this.transactionService = new TransactionService(dataSource);
@@ -28,6 +30,7 @@ export class IpcManager {
     this.incomeCategoryService = new IncomeCategoryService();
     this.expenseCategoryService = new ExpenseCategoryService();
     this.analysisService = new AnalysisService(dataSource);
+    this.fixedCostService = new FixedCostService();
   }
 
   setupIpcHandlers() {
@@ -55,6 +58,11 @@ export class IpcManager {
     ipcMain.handle('create-expensecategory', this.createExpenseCategory.bind(this));
     ipcMain.handle('update-expensecategory', this.updateExpenseCategory.bind(this));
     ipcMain.handle('delete-expensecategory', this.deleteExpenseCategory.bind(this));
+
+    ipcMain.handle('get-all-fixedcost', this.getAllFixedCost.bind(this));
+    ipcMain.handle('create-fixedcost', this.createFixedCost.bind(this));
+    ipcMain.handle('update-fixedcost', this.updateFixedCost.bind(this));
+    ipcMain.handle('delete-fixedcost', this.deleteFixedCost.bind(this));
 
     ipcMain.handle('get-transactions-chart-data-by-month', this.getTransactionsChartDataByMonth.bind(this));
     ipcMain.handle('get-transactions-chart-data-by-payment-day', this.getTransactionsChartDataByPaymentDay.bind(this));
@@ -285,4 +293,44 @@ export class IpcManager {
     }
   }
   
+  private async getAllFixedCost(_: IpcMainInvokeEvent) {
+    try {
+      logger.info('IPC: 모든 고정비 조회 요청');
+      const fixedCosts = await this.fixedCostService.getAllFixedCosts();
+      return fixedCosts;
+    } catch (error) {
+      logger.error('IPC: 모든 고정비 조회 중 오류 발생', error);
+      throw error;
+    }
+  }
+
+  private async createFixedCost(_: IpcMainInvokeEvent, fixedCostData: FixedCost) {
+    try {
+      logger.info('IPC: 새 고정비 생성 요청', { data: fixedCostData });
+      return await this.fixedCostService.createFixedCost(fixedCostData);
+    } catch (error) {
+      logger.error('IPC: 새 고정비 생성 중 오류 발생', error);
+      throw error;
+    }
+  }
+
+  private async updateFixedCost(_: IpcMainInvokeEvent, fixedCostData: FixedCost) {
+    try {
+      logger.info('IPC: 고정비 수정 요청', { data: fixedCostData });
+      await this.fixedCostService.updateFixedCost(fixedCostData);
+    } catch (error) {
+      logger.error('IPC: 고정비 수정 중 오류 발생', error);
+      throw error;
+    }   
+  }
+
+  private async deleteFixedCost(_: IpcMainInvokeEvent, fixedCostData: FixedCost) {
+    try {
+      logger.info('IPC: 고정비 삭제 요청', { data: fixedCostData });
+      await this.fixedCostService.deleteFixedCost(fixedCostData);
+    } catch (error) {
+      logger.error('IPC: 고정비 삭제 중 오류 발생', error);
+      throw error;
+    }
+  }
 }
