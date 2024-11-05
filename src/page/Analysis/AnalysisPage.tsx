@@ -1,199 +1,92 @@
-import { ExpenseCategory } from "@/backend/db/entity/ExpenseCategory";
-import { IncomeCategory } from "@/backend/db/entity/IncomeCategory";
-import { TransactionChartData } from "@/backend/service/AnalysisService";
+
 import { MonthPicker } from "@/components/custom/MonthPicker";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { addMonths, format, subMonths } from "date-fns";
-import { ko } from "date-fns/locale/ko";
+import { addMonths, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Pie, PieChart } from "recharts";
-
-const { ipcRenderer } = window;
+import { RootState, useAppDispatch, useAppSelector } from "./state/AnalysisStore";
+import { fetchTransactionsChartData, fetchTransactionsChartDataByPaymentDay } from "./state/AnalysisDataSlice";
+import { setPaymentDayBased, toggleExpandedCategory } from "./state/AnalysisUISlice";
+import { setSelectedMonthDate } from "./state/AnalysisUISlice";
+import { TransactionList } from "./module/TransactionList";
 
 const AnalysisPage = () => {
+    const dispatch = useAppDispatch();
 
-    const [isPaymentDayBased, setIsPaymentDayBased] = useState<boolean>(false)
-    const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+    const {
+        isPaymentDayBased,
+        expandedCategories,
+        selectedMonthDate,
+        incomeChartConfig,
+        expenseChartConfig
+    } = useAppSelector((state: RootState) => state.analysisUI);
 
-    const [selectedMonthDate, setSelectedMonthDate] = useState<Date>(new Date())
-
-    const [incomeChartData, setIncomeChartData] = useState<TransactionChartData[]>([])
-    const [expenseChartData, setExpenseChartData] = useState<TransactionChartData[]>([])
-
-    const [incomeChartConfig, setIncomeChartConfig] = useState<ChartConfig>({})
-    const [expenseChartConfig, setExpenseChartConfig] = useState<ChartConfig>({})
-
-    const [incomeCategories, setIncomeCategories] = useState<IncomeCategory[]>([])
-    const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([])
-
-    useEffect(() => {
-        fetchIncomeCategories()
-        fetchExpenseCategories()
-        fetchTransactionsChartData()
-    }, [])
+    const {
+        incomeChartData,
+        expenseChartData,
+    } = useAppSelector((state: RootState) => state.analysisData);
 
     useEffect(() => {
+        fetchTransactionsData();
+    }, [isPaymentDayBased, selectedMonthDate]);
+
+    const fetchTransactionsData = () => {
+        const params = {
+            year: new Date(selectedMonthDate).getFullYear(),
+            month: new Date(selectedMonthDate).getMonth() + 1
+        };
+
         if (isPaymentDayBased) {
-            fetchTransactionsChartDataByPaymentDay()
+            dispatch(fetchTransactionsChartDataByPaymentDay(params));
         } else {
-            fetchTransactionsChartData()
+            dispatch(fetchTransactionsChartData(params));
         }
-    }, [selectedMonthDate])
-
-    useEffect(() => {
-        // 수입 카테고리 설정
-        setIncomeChartConfig(prev => {
-            const newConfig = { ...prev };
-            incomeCategories.forEach((category) => {
-                // 이미 설정된 색상이 있으면 그대로 유지, 없으면 새로 설정
-                if (!newConfig[category.name]) {
-                    newConfig[category.name] = {
-                        label: category.name,
-                        color: `hsl(var(--chart-${Object.keys(newConfig).length + 1}))`,
-                    }
-                }
-            })
-            // 기타 카테고리가 없을 때만 추가
-            if (!newConfig["기타"]) {
-                newConfig["기타"] = {
-                    label: "기타",
-                    color: `hsl(var(--chart-${Object.keys(newConfig).length + 1}))`,
-                }
-            }
-            return newConfig;
-        })
-
-        // 지출 카테고리 설정
-        setExpenseChartConfig(prev => {
-            const newConfig = { ...prev };
-            expenseCategories.forEach((category) => {
-                // 이미 설정된 색상이 있으면 그대로 유지, 없으면 새로 설정
-                if (!newConfig[category.name]) {
-                    newConfig[category.name] = {
-                        label: category.name,
-                        color: `hsl(var(--chart-${Object.keys(newConfig).length + 1}))`,
-                    }
-                }
-            })
-            // 기타 카테고리가 없을 때만 추가
-            if (!newConfig["기타"]) {
-                newConfig["기타"] = {
-                    label: "기타",
-                    color: `hsl(var(--chart-${Object.keys(newConfig).length + 1}))`,
-                }
-            }
-            return newConfig;
-        })
-    }, [incomeCategories, expenseCategories])
-
-    const fetchTransactionsChartData = async () => {
-        try {
-            const fetchedTransactionsChartData = await ipcRenderer.invoke('get-transactions-chart-data-by-month', selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1)
-            
-            setIncomeChartData(
-                fetchedTransactionsChartData
-                    .filter((item: TransactionChartData) => item.type === 'income')
-                    .map((item: TransactionChartData) => ({
-                        ...item,
-                        // fill 속성을 chartConfig의 color 값으로 설정
-                        fill: incomeChartConfig[item.category]?.color
-                    }))
-            )
-            
-            setExpenseChartData(
-                fetchedTransactionsChartData
-                    .filter((item: TransactionChartData) => item.type === 'expense')
-                    .map((item: TransactionChartData) => ({
-                        ...item,
-                        fill: expenseChartConfig[item.category]?.color
-                    }))
-            )
-        } catch (error) {
-            console.error('월별 거래 차트 데이터를 불러오는데 실패했습니다', error);
-        }
-    }
-
-    const fetchTransactionsChartDataByPaymentDay = async () => {
-        try {
-            const fetchedTransactionsChartData = await ipcRenderer.invoke('get-transactions-chart-data-by-payment-day', selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1)
-            
-            setIncomeChartData(
-                fetchedTransactionsChartData
-                    .filter((item: TransactionChartData) => item.type === 'income')
-                    .map((item: TransactionChartData) => ({
-                        ...item,
-                        fill: incomeChartConfig[item.category]?.color
-                    }))
-            )
-            setExpenseChartData(
-                fetchedTransactionsChartData
-                    .filter((item: TransactionChartData) => item.type === 'expense')
-                    .map((item: TransactionChartData) => ({
-                        ...item,
-                        fill: expenseChartConfig[item.category]?.color
-                    }))
-            )
-        } catch (error) {
-            console.error('결제일별 거래 차트 데이터를 불러오는데 실패했습니다', error);
-        }
-    }
-
-    const fetchIncomeCategories = async () => {
-        try {
-            const fetchedIncomeCategories = await ipcRenderer.invoke('get-all-incomecategory')
-            setIncomeCategories(fetchedIncomeCategories)
-        } catch (error) {
-            console.error('수입 카테고리를 불러오는데 실패했습니다', error);
-        }
-    }
-
-    const fetchExpenseCategories = async () => {
-        try {
-            const fetchedExpenseCategories = await ipcRenderer.invoke('get-all-expensecategory')
-            setExpenseCategories(fetchedExpenseCategories)
-        } catch (error) {
-            console.error('지출 카테고리를 불러오는데 실패했습니다', error);
-        }
-    }
+    };
 
     const handlePreviousMonth = () => {
-        setSelectedMonthDate(subMonths(selectedMonthDate, 1))
-        setExpandedCategories(new Set())
-    }
+        dispatch(setSelectedMonthDate(subMonths(selectedMonthDate, 1)));
+    };
 
     const handleNextMonth = () => {
-        setSelectedMonthDate(addMonths(selectedMonthDate, 1))
-        setExpandedCategories(new Set())
-    }
+        dispatch(setSelectedMonthDate(addMonths(selectedMonthDate, 1)));
+    };
 
     const handlePaymentDayChange = (checked: boolean) => {
-        setIsPaymentDayBased(checked)
-        if(checked) {
-            fetchTransactionsChartDataByPaymentDay()
-        } else {
-            fetchTransactionsChartData()
-        }
-    }
+        dispatch(setPaymentDayBased(checked));
+    };
 
     const handleCategoryClick = (category: string) => {
-        setExpandedCategories(prev => {
-            const newSet = new Set(prev)
-            if (newSet.has(category)) {
-                newSet.delete(category)
-            } else {
-                newSet.add(category)
-            }
-            return newSet
-        })
-    }
+        dispatch(toggleExpandedCategory(category));
+    };
+
+    const handleMonthChange = (date: Date) => {
+        dispatch(setSelectedMonthDate(date));
+    };
+
+    const sortedIncomeData = useMemo(() => 
+        [...incomeChartData].sort((a, b) => {
+            if (a.category === "기타") return 1;
+            if (b.category === "기타") return -1;
+            return b.category.localeCompare(a.category);
+        }),
+        [incomeChartData]
+    );
+
+    const sortedExpenseData = useMemo(() => 
+        [...expenseChartData].sort((a, b) => {
+            if (a.category === "기타") return 1;
+            if (b.category === "기타") return -1;
+            return b.category.localeCompare(a.category);
+        }),
+        [expenseChartData]
+    );
 
     return (
         <div className='p-5 flex flex-col gap-4 h-full'>
@@ -216,8 +109,8 @@ const AnalysisPage = () => {
                 {/* 오른쪽 기존 컴포넌트들 */}
                 <div className="flex-1 flex items-center justify-end gap-4">
                     <MonthPicker 
-                        value={selectedMonthDate}
-                        onValueChange={setSelectedMonthDate}
+                        value={new Date(selectedMonthDate)}
+                        onValueChange={handleMonthChange}
                     />
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={handlePreviousMonth}>
@@ -280,23 +173,19 @@ const AnalysisPage = () => {
                                     </span>
                                 </div>
                                 <div className="flex-1 space-y-2 overflow-y-auto">
-                                    {incomeChartData
-                                        .sort((a, b) => {
-                                            // "기타" 카테고리는 항상 마지막으로
-                                            if (a.category === "기타") return 1;
-                                            if (b.category === "기타") return -1;
-                                            // 나머지는 기존 정렬 방식 유지
-                                            return b.category.localeCompare(a.category);
-                                        })
+                                    {sortedIncomeData
                                         .map((item) => (
-                                        <Collapsible key={item.category}>
-                                        <CollapsibleTrigger className="w-full">
-                                            <div 
+                                        <Collapsible 
+                                            key={`${item.category}-${Date.now()}`}
+                                            open={expandedCategories.includes(item.category)}
+                                        >
+                                            <CollapsibleTrigger className="w-full">
+                                                <div 
                                                 className="flex justify-between items-center p-2 rounded-lg hover:bg-muted transition-colors"
                                                 onClick={() => handleCategoryClick(item.category)}
                                             >
                                                 <div className="flex items-center gap-2">
-                                                    <ChevronRight className={`h-4 w-4 transition-transform ${expandedCategories.has(item.category) ? 'rotate-90' : ''}`} />
+                                                    <ChevronRight className={`h-4 w-4 transition-transform ${expandedCategories.includes(item.category) ? 'rotate-90' : ''}`} />
                                                     <div 
                                                         className="w-3 h-3 rounded-full" 
                                                         style={{ backgroundColor: item.fill ?? undefined }}
@@ -308,17 +197,7 @@ const AnalysisPage = () => {
                                         </CollapsibleTrigger>
                                         <CollapsibleContent className="transition-all duration-300 data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
                                             <div className="ml-8 space-y-1 mt-2">
-                                                {item.rawTransactions
-                                                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                                                    .map((transaction) => (
-                                                    <div key={transaction.id} className="flex justify-between items-center p-2 text-sm text-muted-foreground">
-                                                        <div className="flex items-center gap-2">
-                                                            <span>{format(new Date(transaction.date), 'M월 d일', { locale: ko })}</span>
-                                                            <div className="text-black">{transaction.description}</div>
-                                                        </div>
-                                                        <span>{transaction.amount.toLocaleString()}원</span>
-                                                    </div>
-                                                ))}
+                                                <TransactionList transactions={item.rawTransactions} />
                                             </div>
                                         </CollapsibleContent>
                                         </Collapsible>
@@ -377,23 +256,19 @@ const AnalysisPage = () => {
                                     </span>
                                 </div>
                                 <div className="flex-1 space-y-2 overflow-y-auto">
-                                    {expenseChartData
-                                        .sort((a, b) => {
-                                            // "기타" 카테고리는 항상 마지막으로
-                                            if (a.category === "기타") return 1;
-                                            if (b.category === "기타") return -1;
-                                            // 나머지는 기존 정렬 방식 유지
-                                            return b.category.localeCompare(a.category);
-                                        })
+                                    {sortedExpenseData
                                         .map((item) => (
-                                        <Collapsible key={item.category}>
+                                        <Collapsible 
+                                            key={`${item.category}-${Date.now()}`}
+                                            open={expandedCategories.includes(item.category)}
+                                        >
                                             <CollapsibleTrigger className="w-full">
                                                 <div 
                                                     className="flex justify-between items-center p-2 rounded-lg hover:bg-muted transition-colors"
                                                     onClick={() => handleCategoryClick(item.category)}
                                                 >
                                                     <div className="flex items-center gap-2">
-                                                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedCategories.has(item.category) ? 'rotate-90' : ''}`} />
+                                                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedCategories.includes(item.category) ? 'rotate-90' : ''}`} />
                                                         <div 
                                                             className="w-3 h-3 rounded-full" 
                                                             style={{ backgroundColor: item.fill ?? undefined }}
@@ -405,24 +280,7 @@ const AnalysisPage = () => {
                                             </CollapsibleTrigger>
                                             <CollapsibleContent className="transition-all duration-300 data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
                                                 <div className="ml-8 space-y-1 mt-2">
-                                                    {item.rawTransactions
-                                                        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                                                        .map((transaction) => (
-                                                        <div key={transaction.id} className="flex justify-between items-center p-2 text-sm text-muted-foreground">
-                                                            <div className="flex items-center gap-2">
-                                                                <span>{format(new Date(transaction.date), 'M월 d일', { locale: ko })}</span>
-                                                                <Badge 
-                                                                    variant={transaction.paymentMethod?.type === 'credit' ? 'purple' : 'blue'}
-                                                                >
-                                                                    {transaction.paymentMethod?.name}
-                                                                </Badge>
-                                                                {isPaymentDayBased && transaction.paymentMethod?.paymentDay && <Badge variant="destructive">{transaction.paymentMethod?.paymentDay}일</Badge>}
-
-                                                                <div className="text-black">{transaction.description}</div>
-                                                            </div>
-                                                            <span>{transaction.amount.toLocaleString()}원</span>
-                                                        </div>
-                                                    ))}
+                                                    <TransactionList transactions={item.rawTransactions} />
                                                 </div>
                                             </CollapsibleContent>
                                         </Collapsible>
@@ -433,7 +291,7 @@ const AnalysisPage = () => {
                     </Card>
                 </div>
             </div>
-           
+        
         </div>
     )
 }

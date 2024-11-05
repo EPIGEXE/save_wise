@@ -9,7 +9,6 @@ export default class ExpenseCategoryService {
         try {
             // logger.info("카테고리 조회 시작");
             return this.expenseCategoryRepository.find();
-            // logger.info(`${expenseCategories.length}개의 카테고리 조회 완료`);
         } catch (error) {
             logger.error("카테고리 조회 중 오류 발생", error);
             throw new Error("카테고리를 조회하는 데 실패했습니다.");

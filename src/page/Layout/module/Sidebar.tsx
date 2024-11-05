@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Nav } from "./Nav"
-import { File, Inbox, Settings } from "lucide-react"
+import { Calendar, File, Inbox, Lock, Settings } from "lucide-react"
 
 interface SidebarProps {
     isCollapsed: boolean
@@ -30,7 +30,7 @@ const Sidebar = ({isCollapsed, setIsCollapsed}: SidebarProps) => {
                     {
                         title: "가계부 캘린더",
                         to: "/",
-                        icon: Inbox,
+                        icon: Calendar,
                         variant: "default",
                     },
                     {
@@ -40,23 +40,17 @@ const Sidebar = ({isCollapsed, setIsCollapsed}: SidebarProps) => {
                         variant: "ghost",
                     },
                     {
+                        title: "고정비용",
+                        to: "/fixedcost",
+                        icon: Lock,
+                        variant: "ghost",
+                    },
+                    {
                         title: "설정",
                         to: "/setting",
                         icon: Settings,
                         variant: "ghost",
                     },
-                    // {
-                    //     title: "온실가스 발생 비교",
-                    //     to: "/compareEmission",
-                    //     icon: File,
-                    //     variant: "ghost",
-                    // },
-                    // {
-                    //     title: "지역별 배출량",
-                    //     to: "/regionEmission",
-                    //     icon: File,
-                    //     variant: "ghost",
-                    // },
                 ]}
             />
         </aside>
