@@ -8,6 +8,7 @@ import { IncomeCategory } from "./entity/IncomeCategory.js"
 import { ExpenseCategory } from "./entity/ExpenseCategory.js"
 import { CreditCardSettlement } from "./entity/CreditCardSettlement.js"
 import { FixedCost } from "./entity/FixedCost.js"
+import { Goal } from "./entity/Goal.js"
 
 const dbPath = path.join(app.getPath('userData'), 'database.sqlite')
 
@@ -21,7 +22,8 @@ export const AppDataSource = new DataSource({
     IncomeCategory, 
     ExpenseCategory, 
     CreditCardSettlement,
-    FixedCost
+    FixedCost,
+    Goal
   ],
   synchronize: true,
   logging: false,

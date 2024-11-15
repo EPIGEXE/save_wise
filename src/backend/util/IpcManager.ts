@@ -14,6 +14,8 @@ import { ExpenseCategory } from "../db/entity/ExpenseCategory.js";
 import AnalysisService from "../service/AnalysisService.js";
 import FixedCostService from "../service/FixedCostService.js";
 import { FixedCost } from "../db/entity/FixedCost.js";
+import GoalService from "../service/Goal.js";
+import { Goal } from "../db/entity/Goal.js";
 export class IpcManager {
   private transactionService: TransactionService;
   private paymentMethodService: PaymentMethodService;
@@ -22,6 +24,7 @@ export class IpcManager {
   private expenseCategoryService: ExpenseCategoryService;
   private analysisService: AnalysisService;
   private fixedCostService: FixedCostService;
+  private goalService: GoalService;
 
   constructor(dataSource: DataSource) {
     this.transactionService = new TransactionService(dataSource);
@@ -31,6 +34,7 @@ export class IpcManager {
     this.expenseCategoryService = new ExpenseCategoryService();
     this.analysisService = new AnalysisService(dataSource);
     this.fixedCostService = new FixedCostService();
+    this.goalService = new GoalService(); 
   }
 
   setupIpcHandlers() {
@@ -66,6 +70,11 @@ export class IpcManager {
 
     ipcMain.handle('get-transactions-chart-data-by-month', this.getTransactionsChartDataByMonth.bind(this));
     ipcMain.handle('get-transactions-chart-data-by-payment-day', this.getTransactionsChartDataByPaymentDay.bind(this));
+  
+    ipcMain.handle('get-all-goal', this.getAllGoal.bind(this));
+    ipcMain.handle('create-goal', this.createGoal.bind(this));
+    ipcMain.handle('update-goal', this.updateGoal.bind(this));
+    ipcMain.handle('delete-goal', this.deleteGoal.bind(this));
   }
 
   private async createTransaction(_: IpcMainInvokeEvent, transactionData: TransactionDto) {
@@ -330,6 +339,47 @@ export class IpcManager {
       await this.fixedCostService.deleteFixedCost(fixedCostData);
     } catch (error) {
       logger.error('IPC: 고정비 삭제 중 오류 발생', error);
+      throw error;
+    }
+  }
+
+  private async getAllGoal(_: IpcMainInvokeEvent) {
+    try {
+      logger.info('IPC: 모든 목표 조회 요청');
+      const goals = await this.goalService.getAllGoals();
+      return goals;
+    } catch (error) {
+      logger.error('IPC: 모든 목표 조회 중 오류 발생', error);
+      throw error;
+    }
+  }
+
+  private async createGoal(_: IpcMainInvokeEvent, goalData: Goal) {
+    try {
+      logger.info('IPC: 새 목표 생성 요청', { data: goalData });
+      return await this.goalService.createGoal(goalData);
+    } catch (error) {
+      logger.error('IPC: 새 목표 생성 중 오류 발생', error);
+      throw error;
+    }
+  }
+
+  private async updateGoal(_: IpcMainInvokeEvent, goalData: Goal) {
+    try {
+      logger.info('IPC: 목표 수정 요청', { data: goalData });
+      await this.goalService.updateGoal(goalData);
+    } catch (error) {
+      logger.error('IPC: 목표 수정 중 오류 발생', error);
+      throw error;
+    }
+  }
+
+  private async deleteGoal(_: IpcMainInvokeEvent, goalData: Goal) {
+    try {
+      logger.info('IPC: 목표 삭제 요청', { data: goalData });
+      await this.goalService.deleteGoal(goalData);
+    } catch (error) {
+      logger.error('IPC: 목표 삭제 중 오류 발생', error);
       throw error;
     }
   }

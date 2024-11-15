@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Nav } from "./Nav"
-import { Calendar, File, Inbox, Lock, Settings } from "lucide-react"
+import { Calendar, File, Goal, Inbox, Lock, Settings } from "lucide-react"
 
 interface SidebarProps {
     isCollapsed: boolean
@@ -40,9 +40,15 @@ const Sidebar = ({isCollapsed, setIsCollapsed}: SidebarProps) => {
                         variant: "ghost",
                     },
                     {
-                        title: "고정비용",
+                        title: "고정수입 / 고정비용",
                         to: "/fixedcost",
                         icon: Lock,
+                        variant: "ghost",
+                    },
+                    {
+                        title: "목표 설정",
+                        to: "/goal",
+                        icon: Goal,
                         variant: "ghost",
                     },
                     {

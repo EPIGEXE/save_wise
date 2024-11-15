@@ -1,16 +1,21 @@
 import { FixedCost } from "@/backend/db/entity/FixedCost";
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { ChartConfig } from "@/components/ui/chart";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 const { ipcRenderer } = window;
 
 interface FixedCostDataState {
     incomeData: FixedCost[];
     expenseData: FixedCost[];
+    incomeChartConfig: ChartConfig;
+    expenseChartConfig: ChartConfig;
 }
 
 const initialState: FixedCostDataState = {
     incomeData: [],
     expenseData: [],
+    incomeChartConfig: {},
+    expenseChartConfig: {}
 }
 
 export const fetchFixedCost = createAsyncThunk(
@@ -44,7 +49,22 @@ export const deleteFixedCost = createAsyncThunk(
 const fixedCostDataSlice = createSlice({
     name: 'fixedCostData',
     initialState,
-    reducers: {},
+    reducers: {
+        updateFixedCostData: (state, action: PayloadAction<{
+            incomeData: FixedCost[];
+            expenseData: FixedCost[];
+        }>) => {
+            state.incomeData = action.payload.incomeData;
+            state.expenseData = action.payload.expenseData;
+        },
+        updateChartConfigs: (state, action: PayloadAction<{
+            incomeChartConfig: ChartConfig;
+            expenseChartConfig: ChartConfig;
+        }>) => {
+            state.incomeChartConfig = action.payload.incomeChartConfig;
+            state.expenseChartConfig = action.payload.expenseChartConfig;
+        }
+    },
     extraReducers: (builder) => {
         builder
             .addCase(fetchFixedCost.fulfilled, (state, action) => {
@@ -65,4 +85,5 @@ const fixedCostDataSlice = createSlice({
     }
 })
 
+export const { updateFixedCostData, updateChartConfigs } = fixedCostDataSlice.actions;
 export default fixedCostDataSlice.reducer;

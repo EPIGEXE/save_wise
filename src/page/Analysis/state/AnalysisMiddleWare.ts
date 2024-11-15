@@ -5,8 +5,8 @@ import {
   updateChartData,
 } from './AnalysisDataSlice';
 import { updateChartConfigs } from './AnalysisUISlice';
-import { generateColorForCategory } from '../../../utils/Utils';
-import { RootState } from './AnalysisStore';
+import { generateColorForCategory, resetColorCache } from '../../../utils/Utils';
+import { RootState } from '@/store/AppStore';
 
 export const analysisDataMiddleware: Middleware = store => next => action => {
   const result = next(action);

@@ -1,5 +1,6 @@
 import { Transaction } from '@/backend/db/entity/Transaction';
-import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { addMonths, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useMemo } from 'react';
 
@@ -30,6 +31,16 @@ export const TransactionList = ({ transactions }: TransactionListProps) => {
                         <div className="text-black">
                             {transaction.description}
                         </div>
+                        {transaction.paymentMethod?.paymentDay && (
+                            <Badge variant="red">
+                                {format(
+                                    addMonths(new Date(transaction.date), 1),
+                                    'M월',
+                                    { locale: ko }
+                                )}
+                                {transaction.paymentMethod.paymentDay}일 결제
+                            </Badge>
+                        )}
                     </div>
                     <span>{transaction.amount.toLocaleString()}원</span>
                 </div>

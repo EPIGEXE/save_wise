@@ -15,6 +15,7 @@ interface TransactionItem {
     paymentMethod?: PaymentMethod;
     incomeCategoryId?: number;
     expenseCategoryId?: number;
+    fixedCostId?: number;
 }
 
 export interface TransactionDto {
@@ -164,7 +165,8 @@ export default class TransactionService {
                 paymentMethodId: transaction.paymentMethodId || null,
                 paymentMethod: transaction.paymentMethod || undefined,
                 incomeCategoryId: transaction.incomeCategoryId || undefined,
-                expenseCategoryId: transaction.expenseCategoryId || undefined
+                expenseCategoryId: transaction.expenseCategoryId || undefined,
+                fixedCostId: transaction.fixedCostId || undefined
             });
         });
         return formatted;
@@ -182,7 +184,8 @@ export default class TransactionService {
                     type: transaction.type,
                     paymentMethodId: transaction.paymentMethodId || undefined,
                     incomeCategoryId: transaction.incomeCategoryId || undefined,
-                    expenseCategoryId: transaction.expenseCategoryId || undefined
+                    expenseCategoryId: transaction.expenseCategoryId || undefined,
+                    fixedCostId: transaction.fixedCostId || undefined
                 });
             }
         }

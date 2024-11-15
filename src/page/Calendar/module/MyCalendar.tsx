@@ -1,31 +1,34 @@
-import { Calendar, momentLocalizer, ToolbarProps } from 'react-big-calendar'
+import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
-import { Input } from '../../../components/ui/input';
-import { Button } from '../../../components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { Label } from '../../../components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { MonthPicker } from '@/components/custom/MonthPicker';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import CustomToolbar from './CustomToolbar';
+import { useAppDispatch } from '@/store/AppStore';
+import { setIncomeCategories, setExpenseCategories, setSelectedDate, setPaymentMethods } from '../state/CalendarDataSlice';
+import { setCurrentTransaction, setShowModal } from '../state/CalendarDataSlice';
+import { setEditMode } from '../state/CalendarDataSlice';
+import TransactionDialog from './TransactionDialog';
+import { FixedCost } from '@/backend/db/entity/FixedCost';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import SelectedDateTransactionList from './SelectedDateTransactionList';
 
 const { ipcRenderer } = window;
 
-interface Transaction {
+export interface CalendarTransaction {
     id: string;
     amount: number;
     description: string;
     type: 'income' | 'expense';
     paymentMethodId: number | null;
-    paymentMethod?: {
-        paymentDay?: number;
-    };
+    paymentMethod?: PaymentMethod | null;
     incomeCategoryId?: number | null | undefined;
+    incomeCategory?: IncomeCategory | null;
     expenseCategoryId?: number | null | undefined;
+    expenseCategory?: ExpenseCategory | null;
+    fixedCostId?: number | null | undefined;
+    fixedCost?: FixedCost | null;
+    fixedCostProspect?: boolean | null;
 }
 
 interface PaymentMethod {
@@ -43,8 +46,6 @@ interface ExpenseCategory {
     id: number;
     name: string;
 }
-
-type TransactionType = 'income' | 'expense';
 
 const StyledCalendarWrapper = styled.div`
     .rbc-calendar {
@@ -110,77 +111,17 @@ const StyledCalendarWrapper = styled.div`
     }
 `;
 
-interface CalendarEvent {
-    start: Date;
-    end: Date;
-    title: string;
-    resource: Transaction;
-}
-
-interface CustomToolbarProps extends ToolbarProps<CalendarEvent> {
-    handlePaymentDayChange: (checked: boolean) => void;
-    isPaymentDayBased: boolean;
-}
-
-const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayBased }: CustomToolbarProps) => {
-
-    const handleMonthChange = (newDate: Date) => {
-      onNavigate('DATE', newDate);
-    };
-
-    const handlePreviousMonth = () => {
-        const newDate = moment(date).subtract(1, 'month');
-        onNavigate('DATE', newDate.toDate());
-    };
-
-    const handleNextMonth = () => {
-        const newDate = moment(date).add(1, 'month');
-        onNavigate('DATE', newDate.toDate());
-    };
-  
-    return (
-        <div className="flex items-center justify-between mb-4">
-            <MonthPicker
-                value={date}
-                onValueChange={handleMonthChange}
-            />
-            <div className="flex items-center space-x-2">
-                <Switch
-                    id="payment-day-mode"
-                    checked={isPaymentDayBased}
-                    onCheckedChange={handlePaymentDayChange}
-                />
-                <Label htmlFor="payment-day-mode">결제일 기준</Label>
-            </div>
-            <div className="flex gap-2">
-                <Button variant="outline" onClick={handlePreviousMonth}>
-                    <ChevronLeft className="h-4 w-4" />
-                </Button>
-                
-                <Button variant="outline" onClick={handleNextMonth}>
-                    <ChevronRight className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
-    );
-};
-
   const MyCalendar = () => {
     moment.locale('ko-KR');
     const localizer = momentLocalizer(moment);
+    const dispatch = useAppDispatch();
 
     // UI
-    const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const [showModal, setShowModal] = useState(false);
-    const [editMode, setEditMode] = useState(false);
     const [isPaymentDayBased, setIsPaymentDayBased] = useState(false);
+    const [date, setDate] = useState(moment().startOf('month').toDate());
 
     // Data
-    const [currentTransaction, setCurrentTransaction] = useState<Transaction>({ id: '', amount: 0, description: '', type: 'expense', paymentMethodId: null });
-    const [transactions, setTransactions] = useState<Record<string, Transaction[]>>({});
-    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-    const [incomeCategories, setIncomeCategories] = useState<IncomeCategory[]>([]);
-    const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+    const [transactions, setTransactions] = useState<Record<string, CalendarTransaction[]>>({});
 
     useEffect(() => {
         fetchTransaction()
@@ -189,20 +130,80 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
         fetchExpenseCategories()
     }, [])
 
+    useEffect(() => {
+        fetchTransaction()
+    }, [date])
+
     const fetchTransaction = async () => {
         try {
+            // 기본 트랜잭션 가져오기
             const fetchedTransactions = await ipcRenderer.invoke('get-all-transaction')
-            console.log(fetchedTransactions)
-            setTransactions(fetchedTransactions)
+            
+            // 현재 실제 날짜의 월과 보고 있는 달 계산
+            const currentMonth = moment().startOf('month')
+            const viewingMonth = moment(date).startOf('month')
+            const previousMonth = viewingMonth.clone().subtract(1, 'month')
+            const nextMonth = viewingMonth.clone().add(1, 'month')
+            
+            // 기본 트랜잭션으로 시작
+            const mergedTransactions = { ...fetchedTransactions }
+            
+            // 각 달이 현재 달 이후인 경우에만 고정 비용 추가
+            const monthsToProcess = [previousMonth, viewingMonth, nextMonth]
+            
+            for (const month of monthsToProcess) {
+                if (month.isSameOrAfter(currentMonth)) {
+                    const fixedCostTransactions = await convertFixedCostsToTransactions(month)
+                    fixedCostTransactions.forEach(([date, transactions]) => {
+                        // 해당 날짜의 기존 트랜잭션들
+                        const existingTransactions = mergedTransactions[date] || [];
+                        
+                        // 새로운 고정비 트랜잭션들 중 이미 등록되지 않은 것만 필터링
+                        const newTransactions = transactions.filter(newTrans => {
+                            
+                            return !existingTransactions.some((existingTrans: CalendarTransaction) => 
+                                existingTrans.fixedCostId === newTrans.fixedCostId
+                            );
+                        });
+            
+                        mergedTransactions[date] = [...existingTransactions, ...newTransactions];
+                    });
+                }
+            }
+            
+            setTransactions(mergedTransactions)
         } catch (error) {
             console.error('거래를 불러오는데 실패했습니다', error)
         }
     }
 
+    const convertFixedCostsToTransactions = async (targetMonth: moment.Moment) => {
+        const fixedCostTransactions: [string, CalendarTransaction[]][] = []
+        const fetchedFixedCosts = await ipcRenderer.invoke('get-all-fixedcost')
+    
+        for (const fixedCost of fetchedFixedCosts) {
+            const prospectDate = targetMonth.clone().date(fixedCost.prospectDay).format('YYYY-MM-DD')
+            const transaction: CalendarTransaction = {
+                id: `fixed-${fixedCost.id}`,
+                amount: fixedCost.amount,
+                description: fixedCost.name,
+                type: fixedCost.type,
+                paymentMethodId: null,
+                incomeCategoryId: fixedCost.incomeCategoryId,
+                expenseCategoryId: fixedCost.expenseCategoryId,
+                fixedCostId: fixedCost.id,
+                fixedCostProspect: true
+            }
+            fixedCostTransactions.push([prospectDate, [transaction]])
+        }
+        
+        return fixedCostTransactions
+    }
+
     const fetchPaymentMethods = async () => {
         try {
             const fetchedPaymentMethods = await ipcRenderer.invoke('get-all-paymentmethod');
-            setPaymentMethods(fetchedPaymentMethods);
+            dispatch(setPaymentMethods(fetchedPaymentMethods));
         } catch (error) {
             console.error('결제 방법을 불러오는데 실패했습니다', error);
         }
@@ -211,7 +212,7 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
     const fetchIncomeCategories = async () => {
         try {
             const fetchedIncomeCategories = await ipcRenderer.invoke('get-all-incomecategory');
-            setIncomeCategories(fetchedIncomeCategories);
+            dispatch(setIncomeCategories(fetchedIncomeCategories));
         } catch (error) {
             console.error('수입 카테고리를 불러오는데 실패했습니다', error);
         }
@@ -220,97 +221,51 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
     const fetchExpenseCategories = async () => {
         try {
             const fetchedExpenseCategories = await ipcRenderer.invoke('get-all-expensecategory');
-            setExpenseCategories(fetchedExpenseCategories);
+            dispatch(setExpenseCategories(fetchedExpenseCategories));
         } catch (error) {
             console.error('지출 카테고리를 불러오는데 실패했습니다', error);
         }
     };
 
     const handleSelectSlot = (slotInfo: { start: Date }) => {
-        setSelectedDate(moment(slotInfo.start).format('YYYY-MM-DD'));
-        setCurrentTransaction({ id: '', amount: 0, description: '', type: 'expense', paymentMethodId: null });
-        setEditMode(false);
-        setShowModal(true);
+        const dateStr = moment(slotInfo.start).format('YYYY-MM-DD')
+        const existingTransactions = transactions[dateStr]
+
+        if(existingTransactions && existingTransactions.length > 0) {
+            return;
+        }
+
+        // 이벤트가 없는 경우 새 거래 추가 다이얼로그
+        dispatch(setSelectedDate(moment(slotInfo.start).format('YYYY-MM-DD')));
+        dispatch(setCurrentTransaction({ id: '', amount: 0, description: '', type: 'expense', paymentMethodId: null }));
+        dispatch(setEditMode(false));
+        dispatch(setShowModal(true));
     };
 
-    const handleSelectEvent = (event: { start: Date; resource: Transaction }) => {
-        setSelectedDate(moment(event.start).format('YYYY-MM-DD'));
-        setCurrentTransaction(event.resource);
-        setEditMode(true);
-        setShowModal(true);
-    };
-
-    const handleCloseModal = () => {
-        setShowModal(false);
-        setCurrentTransaction({ id: '', amount: 0, description: '', type: 'expense', paymentMethodId: null });
-        setEditMode(false);
-    };
-
-    const handleTransactionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setCurrentTransaction(prev => ({ ...prev, [name]: name === 'amount' ? parseFloat(value) || 0 : value }));
-    };
-
-    const handleTypeChange = (value: string) => {
-        if (value === 'income' || value === 'expense') {  // 타입 가드
-            setCurrentTransaction(prev => ({
-                ...prev,
-                type: value as TransactionType,
-                paymentMethodId: value === 'expense' ? prev.paymentMethodId : null,
-                incomeCategoryId: value === 'income' ? null : undefined,
-                expenseCategoryId: value === 'expense' ? null : undefined
+    const handleSelectEvent = (event: { start: Date; resource: CalendarTransaction }) => {
+        dispatch(setSelectedDate(moment(event.start).format('YYYY-MM-DD')));
+        
+        // fixedCostProspect가 true인 경우 생성 모드로 설정
+        if (event.resource.fixedCostProspect) {
+            dispatch(setCurrentTransaction({
+                ...event.resource,
+                id: '', // 새로운 트랜잭션으로 처리하기 위해 id 초기화
+                fixedCostProspect: undefined // 실제 트랜잭션으로 변환
             }));
+            dispatch(setEditMode(false)); // 생성 모드
+        } else {
+            dispatch(setCurrentTransaction(event.resource));
+            dispatch(setEditMode(true)); // 수정 모드
         }
-    };
-
-    const handlePaymentMethodChange = (value: string) => {
-        const selectedMethod = paymentMethods.find(method => method.id.toString() === value);
-        setCurrentTransaction(prev => ({
-            ...prev,
-            paymentMethodId: selectedMethod ? selectedMethod.id : null
-        }));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (currentTransaction.amount && selectedDate) {
-            try {
-                if (editMode) {
-                    const { paymentMethod, ...updateTransaction } = currentTransaction;
-                    console.log(updateTransaction)
-                    await ipcRenderer.invoke('update-transaction', updateTransaction);
-                } else {
-                    await ipcRenderer.invoke('create-transaction', {
-                        [selectedDate]: [currentTransaction]
-                    });
-                }
-                await fetchTransaction();
-                handleCloseModal();
-            } catch (error) {
-                console.error(`거래를 ${editMode ? '수정' : '저장'}하는데 실패했습니다`, error);
-            }
-        }
-    };
-
-    const handleDeleteTransaction = async () => {
-        await ipcRenderer.invoke('delete-transaction', currentTransaction);
-        await fetchTransaction();
-        handleCloseModal();
-    }
-
-    const handleCategoryChange = (value: string) => {
-        setCurrentTransaction(prev => ({
-            ...prev,
-            incomeCategoryId: prev.type === 'income' ? parseInt(value) : undefined,
-            expenseCategoryId: prev.type === 'expense' ? parseInt(value) : undefined
-        }));
+        
+        dispatch(setShowModal(true));
     };
 
     const handlePaymentDayChange = (checked: boolean) => {
         setIsPaymentDayBased(checked);
         if (checked) {
             setTransactions(prev => {
-                const newTransactions: Record<string, Transaction[]> = {};
+                const newTransactions: Record<string, CalendarTransaction[]> = {};
         
                 Object.entries(prev).forEach(([date, transactions]) => {
                     transactions.forEach(transaction => {
@@ -343,12 +298,12 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
 
     const events = Object.entries(transactions).flatMap(([date, dayTransactions]) =>
         dayTransactions.map(transaction => ({
-          start: new Date(date),
-          end: new Date(date),
-          title: `${transaction.type === 'income' ? '+' : '-'}${transaction.amount?.toLocaleString()}원`,
-          resource: transaction,
+            start: new Date(date),
+            end: new Date(date),
+            title: `${transaction.fixedCostId ? '⟳ ' : ''}${transaction.type === 'income' ? '+' : '-'}${transaction.amount?.toLocaleString()}원`,
+            resource: transaction,
         }))
-      );
+    );
 
     const dayPropGetter = (date: Date) => {
         const dateString = moment(date).format('YYYY-MM-DD');
@@ -361,11 +316,14 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
     return (
         <StyledCalendarWrapper className='flex-1'>
             <Calendar
+                date={date}
+                onNavigate={(newDate) => {
+                    setDate(newDate);
+                }}
                 selectable={!isPaymentDayBased}
                 localizer={localizer}
                 defaultView="month"
                 views={['month']}
-                defaultDate={new Date()}
                 onSelectSlot={handleSelectSlot}
                 onSelectEvent={handleSelectEvent}
                 startAccessor="start"
@@ -373,153 +331,136 @@ const CustomToolbar = ({ date, onNavigate, handlePaymentDayChange, isPaymentDayB
                 titleAccessor="title"
                 components={{
                     toolbar: (props) => (
-                        <CustomToolbar 
+                        <CustomToolbar
                             {...props} 
                             handlePaymentDayChange={handlePaymentDayChange} 
-                            isPaymentDayBased={isPaymentDayBased} 
+                            isPaymentDayBased={isPaymentDayBased}
                         />
-                    )
+                    ),
+                    dateCellWrapper: (props) => {
+                        const dateStr = moment(props.value).format('YYYY-MM-DD');
+                        const dayTransactions = transactions[dateStr];
+                        const isCurrentMonth = moment(props.value).month() === moment(date).month();
+
+                        const totals = dayTransactions?.reduce(
+                            (acc, transaction) => {
+                                if(transaction.type === 'income') {
+                                    acc.income += transaction.amount;
+                                } else {
+                                    acc.expense += transaction.amount;
+                                }
+                                return acc;
+                            },
+                            { income: 0, expense: 0 }
+                        ) || { income: 0, expense: 0 };
+
+                        const baseClasses = `
+                            rbc-day-bg relative cursor-pointer
+                            group hover:bg-blue-100
+                            before:content-['이벤트_추가']
+                            before:absolute before:top-1/2 before:left-1/2
+                            before:-translate-x-1/2 before:-translate-y-1/2
+                            before:bg-blue-500/80 before:text-white
+                            before:px-1.5 before:py-0.5 before:rounded
+                            before:text-xs before:opacity-0
+                            before:transition-opacity before:duration-300
+                            before:pointer-events-none
+                            group-hover:before:opacity-100
+                            ${dayTransactions ? 'has-event before:hidden' : ''}
+                            ${!isCurrentMonth ? 'bg-gray-100' : ''} // 이전/다음 달 날짜 스타일
+                        `;
+                
+                        if (!dayTransactions) {
+                            return (
+                                <div 
+                                    className={baseClasses}
+                                    onClick={() => handleSelectSlot({ start: props.value })}
+                                >
+                                    {(totals.income > 0 || totals.expense > 0) && (
+                                        <div className="absolute bottom-0 right-0 left-0 px-1 py-0.5 text-[10px] text-right bg-white/80">
+                                            {totals.income > 0 && (
+                                                <div className="text-green-600">+{totals.income.toLocaleString()}원</div>
+                                            )}
+                                            {totals.expense > 0 && (
+                                                <div className="text-red-600">-{totals.expense.toLocaleString()}원</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        }
+                
+                        return (
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <div className={`rbc-day-bg relative ${!isCurrentMonth ? 'bg-gray-100' : ''}`}>
+                                        {(totals.income > 0 || totals.expense > 0) && (
+                                            <div className={`absolute bottom-0 right-0 left-0 px-1 py-0.5 text-[10px] text-right bg-white/80 ${!isCurrentMonth ? 'bg-gray-100' : ''}`}>
+                                                {totals.income > 0 && (
+                                                    <div className="text-green-600">+{totals.income.toLocaleString()}원</div>
+                                                )}
+                                                {totals.expense > 0 && (
+                                                    <div className="text-red-600">-{totals.expense.toLocaleString()}원</div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </PopoverTrigger>
+                                <PopoverContent 
+                                    className="w-[320px] p-0" 
+                                    sideOffset={5}
+                                    align="start"
+                                >
+                                    <SelectedDateTransactionList date={dateStr} transactions={dayTransactions} />
+                                </PopoverContent>
+                            </Popover>
+                        );
+                    }
                 }}
                 events={events}
                 eventPropGetter={(event) => ({
                     style: {
                         fontSize: '14px',
-                        backgroundColor: event.resource.type === 'income' ? 'rgb(220, 252, 231)' : 'rgb(254, 226, 226)',
-                        color: event.resource.type === 'income' ? 'rgb(22, 163, 74)' : 'rgb(220, 38, 38)',
-                        border: `1px solid ${event.resource.type === 'income' ? 'rgb(134, 239, 172)' : 'rgb(252, 165, 165)'}`,
+                        backgroundColor: event.resource.fixedCostId
+                            ? event.resource.fixedCostProspect 
+                                ? event.resource.type === 'income'
+                                    ? 'rgb(240, 249, 255)' // 예정된 수입 고정비
+                                    : 'rgb(255, 241, 242)' // 예정된 지출 고정비
+                                : event.resource.type === 'income'
+                                    ? 'rgb(219, 234, 254)' // 등록된 수입 고정비
+                                    : 'rgb(254, 202, 202)' // 등록된 지출 고정비
+                            : event.resource.type === 'income' 
+                                ? 'rgb(220, 252, 231)' // 일반 수입
+                                : 'rgb(254, 226, 226)', // 일반 지출
+                        color: event.resource.fixedCostId
+                            ? event.resource.fixedCostProspect
+                                ? event.resource.type === 'income'
+                                    ? 'rgb(59, 130, 246)' // 예정된 수입 고정비 텍스트
+                                    : 'rgb(239, 68, 68)' // 예정된 지출 고정비 텍스트
+                                : event.resource.type === 'income'
+                                    ? 'rgb(37, 99, 235)' // 등록된 수입 고정비 텍스트
+                                    : 'rgb(185, 28, 28)' // 등록된 지출 고정비 텍스트
+                            : event.resource.type === 'income' 
+                                ? 'rgb(22, 163, 74)' // 일반 수입 텍스트
+                                : 'rgb(220, 38, 38)', // 일반 지출 텍스트
+                        border: event.resource.fixedCostId
+                            ? event.resource.fixedCostProspect
+                                ? `1px dashed ${event.resource.type === 'income' 
+                                    ? 'rgb(147, 197, 253)' // 예정된 수입 고정비 테두리
+                                    : 'rgb(252, 165, 165)'}` // 예정된 지출 고정비 테두리
+                                : `2px solid ${event.resource.type === 'income' 
+                                    ? 'rgb(147, 197, 253)' // 등록된 수입 고정비 테두리
+                                    : 'rgb(252, 165, 165)'}` // 등록된 지출 고정비 테두리
+                            : `1px solid ${event.resource.type === 'income' 
+                                ? 'rgb(134, 239, 172)' // 일반 수입 테두리
+                                : 'rgb(252, 165, 165)'}`, // 일반 지출 테두리
+                        opacity: event.resource.fixedCostProspect ? 0.9 : 1,
                     },
                     className: 'transition-all duration-300 ease-in-out hover:brightness-90 hover:shadow-md',
                 })}
                 dayPropGetter={dayPropGetter}
             />
-            <Dialog open={showModal} onOpenChange={setShowModal}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editMode ? '거래 수정' : '거래 입력'} - {selectedDate}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit}>
-                        <div className="space-y-4">
-                            <div className="space-y-1">
-                                <Label htmlFor="type">거래 유형</Label>
-                                <ToggleGroup 
-                                    type="single" 
-                                    value={currentTransaction.type} 
-                                    onValueChange={handleTypeChange} 
-                                    className="w-full"
-                                >
-                                    <ToggleGroupItem 
-                                        value="income" 
-                                        aria-label="수입" 
-                                        className="w-1/2 py-2 transition-all duration-200 data-[state=on]:bg-blue-500 data-[state=on]:text-white data-[state=on]:font-bold hover:bg-gray-100 rounded-l-lg"
-                                    >
-                                        수입
-                                    </ToggleGroupItem>
-                                    <ToggleGroupItem 
-                                        value="expense" 
-                                        aria-label="지출" 
-                                        className="w-1/2 py-2 transition-all duration-200 data-[state=on]:bg-red-500 data-[state=on]:text-white data-[state=on]:font-bold hover:bg-gray-100 rounded-r-lg"
-                                    >
-                                        지출
-                                    </ToggleGroupItem>
-                                </ToggleGroup>
-                            </div>
-                            
-                            <div className="space-y-1">
-                                <Label htmlFor="amount">금액</Label>
-                                <Input
-                                    id="amount"
-                                    type="number"
-                                    name="amount"
-                                    value={currentTransaction.amount || ''}
-                                    onChange={handleTransactionChange}
-                                    placeholder="금액 입력"
-                                />
-                            </div>
-
-                            <div className="space-y-1">
-                                <Label htmlFor="category">{currentTransaction.type === 'income' ? '수입' : '지출'} 카테고리</Label>
-                                <div
-                                    key={currentTransaction.type}
-                                    className="transition-all duration-300 ease-in-out transform"
-                                >
-                                    <ToggleGroup 
-                                        type="single" 
-                                        value={currentTransaction.type === 'income' 
-                                            ? currentTransaction.incomeCategoryId?.toString() || ''
-                                            : currentTransaction.expenseCategoryId?.toString() || ''
-                                        } 
-                                        onValueChange={handleCategoryChange} 
-                                        className="w-full grid grid-cols-4 gap-2"
-                                    >
-                                        {(currentTransaction.type === 'income' ? incomeCategories : expenseCategories).map(category => (
-                                            <ToggleGroupItem 
-                                            key={category.id} 
-                                            value={category.id.toString()}
-                                            className={`py-2 px-4 transition-all duration-200 
-                                                ${currentTransaction.type === 'income' 
-                                                    ? 'data-[state=on]:bg-blue-500' 
-                                                    : 'data-[state=on]:bg-red-500'} 
-                                                data-[state=on]:text-white data-[state=on]:font-bold 
-                                                hover:bg-gray-100 rounded-lg`}
-                                        >
-                                            {category.name}
-                                        </ToggleGroupItem>
-                                        ))}
-                                    </ToggleGroup>
-                                </div>
-                            </div>
-
-                            <div className="space-y-1">
-                                <Label htmlFor="paymentMethod" className={currentTransaction.type === 'income' ? 'text-gray-400' : ''}>
-                                    결제 방법
-                                </Label>
-                                <Select
-                                    value={currentTransaction.paymentMethodId?.toString() || ''}
-                                    onValueChange={handlePaymentMethodChange}
-                                    disabled={currentTransaction.type === 'income'}
-                                >
-                                    <SelectTrigger id="paymentMethod" className={currentTransaction.type === 'income' ? 'opacity-50 cursor-not-allowed' : ''}>
-                                        <SelectValue placeholder="결제 방법 선택" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {paymentMethods.map(method => (
-                                            <SelectItem key={method.id} value={method.id.toString()}>
-                                                {method.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            
-                            <div className="space-y-1">
-                                <Label htmlFor="description">설명</Label>
-                                <Input
-                                    id="description"
-                                    type="text"
-                                    name="description"
-                                    value={currentTransaction.description}
-                                    onChange={handleTransactionChange}
-                                    placeholder="설명 입력"
-                                />
-                            </div>
-                        </div>
-                        
-                        <DialogFooter className="mt-6">
-                            {editMode && (
-                                <Button type="button" variant="destructive" onClick={handleDeleteTransaction}>
-                                    삭제
-                                </Button>
-                            )}
-                            <Button type="button" variant="outline" onClick={handleCloseModal}>
-                                취소
-                            </Button>
-                            <Button type="submit">
-                                {editMode ? '수정' : '추가'}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+            <TransactionDialog fetchTransaction={fetchTransaction} />
         </StyledCalendarWrapper>
     )
 }

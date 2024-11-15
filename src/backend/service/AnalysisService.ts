@@ -5,6 +5,8 @@ import TransactionService from "./TransactionService.js";
 export interface TransactionChartData {
     category: string;
     amount: number;
+    fixedAmount: number;
+    target: number | null;
     fill: string | null;
     paymentMethodName: string | null;
     type: 'income' | 'expense';
@@ -49,9 +51,11 @@ export default class AnalysisService {
         // Map의 value 타입에 rawTransactions 배열 추가
         const categoryAmounts = new Map<string, {
             amount: number;
+            fixedAmount: number;
             type: 'income' | 'expense';
             paymentMethodName: string | null;
             rawTransactions: Transaction[];
+            target: number | null;
         }>();
     
         transactions.forEach(transaction => {
@@ -61,16 +65,24 @@ export default class AnalysisService {
     
             const currentData = categoryAmounts.get(category) ?? {
                 amount: 0,
+                fixedAmount: 0,
                 type: transaction.type,
                 paymentMethodName: transaction.paymentMethod?.name,
-                rawTransactions: []
+                rawTransactions: [],
+                target: transaction.type === 'expense' ? transaction.expenseCategory?.goals?.[0]?.targetAmount : null
             };
+
+            if(transaction.fixedCostId) {
+                currentData.fixedAmount += transaction.amount;
+            }
     
             categoryAmounts.set(category, {
                 amount: currentData.amount + transaction.amount,
+                fixedAmount: currentData.fixedAmount,
                 type: transaction.type,
                 paymentMethodName: transaction.paymentMethod?.name ?? null,
-                rawTransactions: [...currentData.rawTransactions, transaction]
+                rawTransactions: [...currentData.rawTransactions, transaction],
+                target: currentData.target ?? null
             });
         })
     
@@ -78,10 +90,12 @@ export default class AnalysisService {
             chartData.push({ 
                 category, 
                 amount: data.amount,
+                fixedAmount: data.fixedAmount,
                 type: data.type,
                 fill: null,
                 paymentMethodName: data.paymentMethodName ?? null,
-                rawTransactions: data.rawTransactions
+                rawTransactions: data.rawTransactions,
+                target: data.target
             });
         });
 

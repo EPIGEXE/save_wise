@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "t
 import { PaymentMethod } from "./PaymentMethod.js";
 import { IncomeCategory } from "./IncomeCategory.js";
 import { ExpenseCategory } from "./ExpenseCategory.js";
+import { FixedCost } from "./FixedCost.js";
 
 @Entity()
 export class Transaction {
@@ -40,4 +41,11 @@ export class Transaction {
 
     @Column({ nullable: true })
     expenseCategoryId?: number;
+
+    @Column({ nullable: true })
+    fixedCostId?: number;
+
+    @ManyToOne(() => FixedCost, fixedCost => fixedCost.transactions, { onDelete: 'SET NULL', eager: true })
+    @JoinColumn({ name: 'fixedCostId' })
+    fixedCost?: FixedCost;
 }
