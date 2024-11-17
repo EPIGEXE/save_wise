@@ -18,7 +18,6 @@ import { TransactionList } from "./module/TransactionList";
 import { RootState, useAppSelector } from "@/store/AppStore";
 import { useAppDispatch } from "@/store/AppStore";
 import { PieSectorDataItem } from "recharts/types/polar/Pie";
-import { darkenColor } from "@/utils/Utils";
 
 
 const AnalysisPage = () => {
@@ -233,7 +232,7 @@ const AnalysisPage = () => {
                                                         dominantBaseline={props.dominantBaseline}
                                                         fontSize="15"  // 글자 크기 조정
                                                     >
-                                                        {`${payload.category} ${((payload.amount / expenseChartData.reduce((sum, item) => sum + item.amount, 0)) * 100).toFixed(0)}%`}
+                                                        {`${payload.category} ${((payload.amount / incomeChartData.reduce((sum, item) => sum + item.amount, 0)) * 100).toFixed(0)}%`}
                                                     </text>
                                                 )
                                             }}
@@ -482,8 +481,6 @@ const AnalysisPage = () => {
                                                 hideLabel 
                                             />}
                                         />
-                                        {/* 각 카테고리별 목표치 선 */}
-                                        
                                         {/* 고정비 Bar (아래쪽) - 빗금 패턴 */}
                                         <Bar 
                                             dataKey="fixedAmount" 
@@ -506,6 +503,31 @@ const AnalysisPage = () => {
                                                     key={`cell-variable-${index}`}
                                                     fill={entry.fill}
                                                 />
+                                            ))}
+                                        </Bar>
+
+                                        {/* 목표치까지 남은 금액 Bar */}
+                                        <Bar 
+                                            dataKey={(data) => data.target ? Math.max(0, data.target - data.amount) : 0}
+                                            stackId="a"
+                                            fill="#ff4d4f"
+                                            fillOpacity={0.1}
+                                            stroke="#ff4d4f"
+                                            strokeDasharray="3 3"
+                                            strokeWidth={1}
+                                        >
+                                            {/* 목표치 라벨 */}
+                                            {sortedExpenseData.map((entry, index) => (
+                                                entry.target && entry.target > entry.amount && (
+                                                    <Label
+                                                        key={`target-label-${index}`}
+                                                        position="top"
+                                                        fill="#ff4d4f"
+                                                        fontSize={12}
+                                                    >
+                                                        {`목표: ${entry.target.toLocaleString()}원`}
+                                                    </Label>
+                                                )
                                             ))}
                                         </Bar>
                                         
