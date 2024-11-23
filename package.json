@@ -3,14 +3,49 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "description": "Save Wise Application", 
+  "author": {                            
+    "name": "YongMin Kim",
+    "email": "kym950205@gmail.com"
+  },
   "main": "dist-electron/electron.js",
   "scripts": {
     "start": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "startEt": "concurrently \"vite\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && electron .\"",
-    "buildEt": "tsc -p tsconfig.electron.json && vite build && electron-builder",
+    "buildEt": "set NODE_ENV=production && tsc -p tsconfig.electron.json && vite build && electron-builder --config.asar=true",
     "preview": "vite preview"
+  },
+  "build": {
+    "productName": "Save wise",
+    "appId": "net.ymkim.savewise",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "Save wise"
+    },
+    "directories": {
+      "output": "release",
+      "buildResources": "resources"
+    }
   },
   "dependencies": {
     "@radix-ui/react-collapsible": "^1.1.1",

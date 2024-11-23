@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { HashRouter, Route, Routes, useLocation } from 'react-router-dom';
 import Layout from './page/Layout/Layout';
 import SettingPage from './page/Setting/SettingPage';
 import CalendarPage from './page/Calendar/CalendarPage';
@@ -36,9 +36,9 @@ function AppRoutes() {
 function App() {
   return (
     <Provider store={appStore}>
-      <BrowserRouter>
+      <HashRouter>
         <AppRoutes />
-      </BrowserRouter>
+      </HashRouter>
     </Provider>
   )
 }

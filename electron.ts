@@ -3,7 +3,7 @@ import { app, BrowserWindow } from 'electron'
 import { AppDataSource, initializeDatabase } from './src/backend/db/database.js'
 import { fileURLToPath } from 'url'
 import { IpcManager } from './src/backend/util/IpcManager.js'
-import { installExtension, REACT_DEVELOPER_TOOLS } from 'electron-extension-installer';
+//import { installExtension, REACT_DEVELOPER_TOOLS } from 'electron-extension-installer';
 import CreditCardSettlementManager from './src/backend/core/CreditCardSettlementManager.js'
 import { logger } from './src/backend/util/logger.js'
 
@@ -20,10 +20,32 @@ async function createWindow() {
     },
   })
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (!app.isPackaged) {
     win.loadURL('http://localhost:5173')
   } else {
-    win.loadFile(path.join(__dirname, 'dist', 'index.html'))
+    // 실행 경로 확인을 위한 로그
+    logger.info(`앱 경로: ${app.getAppPath()}`)
+    logger.info(`리소스 경로: ${process.resourcesPath}`)
+    logger.info(`실행 경로: ${process.execPath}`)
+    logger.info(`현재 작업 디렉토리: ${process.cwd()}`)
+    logger.info(`__dirname: ${__dirname}`)
+
+    const indexPath = path.join(__dirname, '..', 'dist', 'index.html')
+    try {
+      logger.info(`시도할 index.html 경로: ${indexPath}`)
+      await win.loadFile(indexPath)
+      logger.info('메인 윈도우 로딩 성공')
+    } catch (error) {
+      logger.error(`메인 윈도우 로딩 실패: ${error}`)
+      
+      // 오류 발생 시 파일 존재 여부 확인
+      const fs = require('fs')
+      if (fs.existsSync(indexPath)) {
+        logger.info('파일이 존재함')
+      } else {
+        logger.error('파일이 존재하지 않음')
+      }
+    }
   }
   
   const ipcManager = new IpcManager(AppDataSource);  
@@ -32,11 +54,11 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  await installExtension(REACT_DEVELOPER_TOOLS, {
-    loadExtensionOptions: {
-      allowFileAccess: true
-    }
-  })
+  // await installExtension(REACT_DEVELOPER_TOOLS, {
+  //   loadExtensionOptions: {
+  //     allowFileAccess: true
+  //   }
+  // })
 
   try {
     const dataSource = await initializeDatabase();
