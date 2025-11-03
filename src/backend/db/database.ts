@@ -13,14 +13,15 @@ import { Goal } from "./entity/Goal.js"
 const dbPath = path.join(app.getPath('userData'), 'database.sqlite')
 
 export const AppDataSource = new DataSource({
-  type: "sqlite",
-  database: dbPath,
+  type: "sqljs",
+  location: dbPath,
+  autoSave: true,
   entities: [
-    Transaction, 
-    PaymentMethod, 
-    Asset, 
-    IncomeCategory, 
-    ExpenseCategory, 
+    Transaction,
+    PaymentMethod,
+    Asset,
+    IncomeCategory,
+    ExpenseCategory,
     CreditCardSettlement,
     FixedCost,
     Goal

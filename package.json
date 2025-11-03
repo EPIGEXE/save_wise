@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Save Wise Application", 
-  "author": {                            
+  "description": "Save Wise Application",
+  "author": {
     "name": "YongMin Kim",
     "email": "kym950205@gmail.com"
   },
@@ -29,7 +29,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "artifactName": "${productName}-Setup-${version}.${ext}"
@@ -79,7 +81,7 @@
     "redux": "^5.0.1",
     "reflect-metadata": "^0.2.2",
     "save_wise": "file:",
-    "sqlite3": "^5.1.7",
+    "sql.js": "^1.13.0",
     "styled-components": "^6.1.13",
     "tailwind-merge": "^2.5.3",
     "tailwindcss-animate": "^1.0.7",
