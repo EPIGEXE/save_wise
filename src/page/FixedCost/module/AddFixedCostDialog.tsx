@@ -13,18 +13,23 @@ interface AddFixedCostDialogProps {
     onAdd: (data: { name: string; amount: number; prospectDay: number; type: 'income' | 'expense' }) => void;
 }
 
+// 고정비용 추가 다이얼로그
 export function AddFixedCostDialog({ type, dateOptions, onAdd }: AddFixedCostDialogProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    // ========================================== 상태 정의 ==========================================
+    const [isOpen, setIsOpen] = useState(false); // 다이얼로그 열림 여부
     const [form, setForm] = useState({
-        name: '',
-        amount: 0,
-        prospectDay: 1
+        name: '', // 항목명
+        amount: 0, // 금액
+        prospectDay: 1, // 예상일
     });
 
+    // ========================================== 핸들러 ==========================================
+    // 폼 변경 핸들러
     const handleFormChange = (field: string, value: string | number) => {
         setForm(prev => ({ ...prev, [field]: value }));
     };
 
+    // 제출 핸들러
     const handleSubmit = () => {
         onAdd({ ...form, type });
         setForm({ name: '', amount: 0, prospectDay: 1 });

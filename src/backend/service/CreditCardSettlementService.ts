@@ -6,16 +6,18 @@ import TransactionService from "./TransactionService.js";
 import { CreditCardSettlement } from "../db/entity/CreditCardSettlement.js";
 import { logger } from "../util/logger.js";
 
+// 신용카드 결제 처리 서비스
 export default class CreditCardSettlementService {
-    private transactionService: TransactionService;
-    private paymentMethodRepository = AppDataSource.getRepository(PaymentMethod);
-    private assetRepository = AppDataSource.getRepository(Asset);
-    private settlementRepository = AppDataSource.getRepository(CreditCardSettlement);
+    private transactionService: TransactionService; // 거래 내역 서비스
+    private paymentMethodRepository = AppDataSource.getRepository(PaymentMethod); // 결제 방법 저장소
+    private assetRepository = AppDataSource.getRepository(Asset); // 자산 저장소
+    private settlementRepository = AppDataSource.getRepository(CreditCardSettlement); // 신용카드 결제 처리 저장소
 
     constructor(dataSource: DataSource) {
         this.transactionService = new TransactionService(dataSource);
     }
 
+    // 신용카드 결제 처리
     async processCreditCardSettlement(year: number, month: number): Promise<void> {
         try {
             const creditCards = await this.paymentMethodRepository.find({
@@ -64,6 +66,7 @@ export default class CreditCardSettlementService {
         }
     }
 
+    // 체크카드 결제 처리
     private async processCardSettlement(card: PaymentMethod, year: number, month: number): Promise<void> {
         if(!card.asset || !card.paymentDay) return;
 
@@ -90,6 +93,8 @@ export default class CreditCardSettlementService {
         await this.settlementRepository.save(settlement);
     }
 
+    // ================================= private =================================
+    // 결제 기간 계산
     private calculateBillingPeriod(targetDate: Date) {
         const year = targetDate.getFullYear();
         const month = targetDate.getMonth(); // 0-11
@@ -110,6 +115,7 @@ export default class CreditCardSettlementService {
         return { startDate, endDate };
     }
 
+    // 자산 잔액 업데이트
     private async updateAssetBalance(assetId: number, amount: number): Promise<void> {
         const asset = await this.assetRepository.findOne({ where: { id: assetId }});
         if (asset) {

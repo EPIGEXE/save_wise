@@ -2,9 +2,11 @@ import { AppDataSource } from "../db/database.js";
 import { Goal } from "../db/entity/Goal.js";
 import { logger } from "../util/logger.js";
 
+// 목표 서비스
 export default class GoalService {
-    private goalRepository = AppDataSource.getRepository(Goal)
+    private goalRepository = AppDataSource.getRepository(Goal); // 목표 저장소
 
+    // 모든 목표 조회
     async getAllGoals(): Promise<Goal[]> {
         try {
             return this.goalRepository.find({
@@ -18,6 +20,7 @@ export default class GoalService {
         }
     }
 
+    // 목표 생성
     async createGoal(goal: Goal): Promise<Goal> {
         try {
             // logger.info("목표 생성 시작", { data: goal })
@@ -28,6 +31,7 @@ export default class GoalService {
         }
     }
 
+    // 목표 수정
     async updateGoal(goal: Goal): Promise<Goal> {
         try {
             // logger.info("목표 수정 시작", { data: goal })
@@ -39,6 +43,7 @@ export default class GoalService {
         }
     }
 
+    // 목표 삭제
     async deleteGoal(goal: Goal): Promise<void> {
         try {
             // logger.info("목표 삭제 시작", { id: goal.id })

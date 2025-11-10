@@ -4,6 +4,7 @@ import PaymentSetting from "./module/PaymentSetting";
 import AssetSetting from "./module/AssetSetting";
 import CategorySetting from "./module/CategorySetting";
 
+// 설정 페이지
 const SettingPage = ({ isCollapsed }: { isCollapsed: boolean }) => {
 
     return (

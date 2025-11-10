@@ -5,6 +5,8 @@ import fixedCostDataReducer from "../page/FixedCost/state/FixedCostDataSlice";
 import { analysisDataMiddleware } from "@/page/Analysis/state/AnalysisMiddleWare";
 import { fixedCostListenerMiddleware } from "@/page/FixedCost/state/FixedCostMiddleWare";
 import calendarDataReducer from "@/page/Calendar/state/CalendarDataSlice";
+
+// 앱 스토어 설정
 export const appStore = configureStore({
     reducer: {
         analysisData: analysisDataReducer,
@@ -14,7 +16,9 @@ export const appStore = configureStore({
     },
     middleware: (getDefaultMiddleware) => {
         return getDefaultMiddleware()
+            // 기본 미들웨어 뒤에 실행
             .concat(analysisDataMiddleware)
+            // 기본 미들웨어 앞에 실행
             .prepend(fixedCostListenerMiddleware.middleware)
     },
 })

@@ -1,14 +1,16 @@
-import { Transaction } from '@/backend/db/entity/Transaction';
+import { ITransaction } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { addMonths, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useMemo } from 'react';
 
 interface TransactionListProps {
-    transactions: Transaction[];
+    transactions: ITransaction[];
 }
 
+// 거래 목록 표시 컴포넌트
 export const TransactionList = ({ transactions }: TransactionListProps) => {
+    // ========================================== 상수 관리 ===========================================
     // 정렬된 트랜잭션 목록을 메모이제이션
     const sortedTransactions = useMemo(() => 
         [...transactions].sort((a, b) => 

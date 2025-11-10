@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 const Layout = ({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (isCollapsed: boolean) => void }) => {
 
     return (
+        // 툴팁 Provider
         <TooltipProvider delayDuration={0}>
             <div className="min-h-screen w-full flex flex-col">
                 <header className='bg-gray-800 text-white p-4 h-16 flex items-center'>header</header>

@@ -1,27 +1,29 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Asset } from "./Asset.js";
+import { IPaymentMethod } from "@/types/index.js";
 
+// 결제 방법 엔티티
 @Entity()
-export class PaymentMethod {
+export class PaymentMethod implements IPaymentMethod {
     @PrimaryGeneratedColumn()
-    id!: number;
+    id!: number; // 결제 방법 ID
 
     @Column()
-    name!: string;
+    name!: string; // 결제 방법 이름
 
     @Column()
-    type!: "cash" | "credit";
+    type!: "cash" | "credit"; // 결제 방법 유형
 
     @Column({ type: 'int', nullable: true })
-    paymentDay!: number | null;
+    paymentDay!: number | null; // 결제 날짜
 
     @Column({ nullable: true })
-    description!: string;
+    description!: string; // 결제 방법 설명
 
     @Column({ nullable: true })
-    assetId?: number;
+    assetId?: number; // 자산 ID
 
     @ManyToOne(() => Asset, { onDelete: 'SET NULL', eager: true, nullable: true })
     @JoinColumn({ name: 'assetId' })
-    asset?: Asset;
+    asset?: Asset; // 자산
 }

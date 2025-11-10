@@ -1,20 +1,20 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { FixedCostItem } from "./FixedCostItem";
 import { AddFixedCostDialog } from "./AddFixedCostDialog";
-import { FixedCost } from "@/backend/db/entity/FixedCost";
 import { Separator } from "@/components/ui/separator";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Pie, PieChart } from "recharts";
 import { useEffect, useState } from "react";
+import type { FixedCostItem as FixedCostItemType } from "../FixedCostType";
+import { FixedCostItem } from "./FixedCostItem";
 
 interface FixedCostSectionProps {
-    data: FixedCost[];
-    type: 'income' | 'expense';
+    data: FixedCostItemType[];
+    type: "income" | "expense";
     chartConfig: ChartConfig;
     dateOptions: number[];
-    onAdd: (data: { name: string; amount: number; prospectDay: number; type: 'income' | 'expense' }) => void;
+    onAdd: (data: { name: string; amount: number; prospectDay: number; type: "income" | "expense" }) => void;
     onUpdate: (id: number, data: Partial<FixedCost>) => void;
-    onDelete: (id: number, type: 'income' | 'expense') => void;
+    onDelete: (id: number, type: "income" | "expense") => void;
 }
 
 export function FixedCostSection({
@@ -26,32 +26,31 @@ export function FixedCostSection({
     onUpdate,
     onDelete,
 }: FixedCostSectionProps) {
-    const total = data.reduce((sum, item) => sum + item.amount, 0);
-    const [chartKey, setChartKey] = useState(0);
+    // ========================================== 상태 정의 ==========================================
+    const [chartKey, setChartKey] = useState(0); // 차트 키
 
+    // ========================================== 상수 정의 ==========================================
+    const total = data.reduce((sum, item) => sum + item.amount, 0); // 총 금액
+
+    // ========================================== useEffect ==========================================
     useEffect(() => {
-        setChartKey(prev => prev + 1);
-    }, [data]);
+        setChartKey((prev) => prev + 1);
+    }, [data]); // 데이터가 변경될 때 차트 키 업데이트
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
             {/* 왼쪽: 차트 */}
             <Card className="flex flex-col h-full">
                 <CardHeader>
-                    <h3 className="text-lg font-semibold">
-                        {type === 'income' ? '수입' : '지출'} 분포
-                    </h3>
+                    <h3 className="text-lg font-semibold">{type === "income" ? "수입" : "지출"} 분포</h3>
                 </CardHeader>
                 <CardContent className="flex-1">
                     <ChartContainer config={chartConfig} className="w-full h-full">
                         <PieChart>
-                            <ChartTooltip
-                                cursor={false}
-                                content={<ChartTooltipContent hideLabel />}
-                            />
-                            <Pie 
+                            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                            <Pie
                                 key={chartKey}
-                                data={data} 
+                                data={data}
                                 dataKey="amount"
                                 nameKey="name"
                                 outerRadius={180}
@@ -70,7 +69,7 @@ export function FixedCostSection({
                                         >
                                             {`${payload.name} ${((payload.amount / total) * 100).toFixed(0)}%`}
                                         </text>
-                                    )
+                                    );
                                 }}
                             />
                         </PieChart>
@@ -83,11 +82,9 @@ export function FixedCostSection({
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="space-y-1">
                         <h3 className="text-2xl font-semibold tracking-tight">
-                            총 {type === 'income' ? '수입' : '지출'}
+                            총 {type === "income" ? "수입" : "지출"}
                         </h3>
-                        <p className="text-sm text-muted-foreground">
-                            매월 {data.length}개 항목
-                        </p>
+                        <p className="text-sm text-muted-foreground">매월 {data.length}개 항목</p>
                     </div>
                     <div className="text-2xl font-bold">
                         {total.toLocaleString()}
@@ -96,11 +93,7 @@ export function FixedCostSection({
                 </CardHeader>
                 <Separator className="mb-4" />
                 <CardContent className="space-y-4">
-                    <AddFixedCostDialog
-                        type={type}
-                        dateOptions={dateOptions}
-                        onAdd={onAdd}
-                    />
+                    <AddFixedCostDialog type={type} dateOptions={dateOptions} onAdd={onAdd} />
                     <div className="space-y-2 max-h-[500px] overflow-y-auto">
                         {data.map((item) => (
                             <FixedCostItem

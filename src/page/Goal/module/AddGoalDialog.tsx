@@ -2,22 +2,26 @@ import { useState } from "react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
-import { Goal } from "@/backend/db/entity/Goal";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/custom/CurrencyInput";
 
-const AddGoalDialog = ({ onAdd }: { onAdd: (data: Goal) => void }) => {
-    const [isOpen, setIsOpen] = useState(false);
+// 목표 추가 다이얼로그
+const AddGoalDialog = ({ onAdd }: { onAdd: (data: IGoal) => void }) => {
+    // ========================================== 상태 정의 ==========================================
+    const [isOpen, setIsOpen] = useState(false); // 다이얼로그 열림 여부
     const [form, setForm] = useState({
         name: '',
         targetAmount: 0,
-    });
+    }); // 설정 폼 값
 
+    // ========================================== 핸들러 ==========================================
+    // 폼 변경 핸들러
     const handleFormChange = (field: string, value: string | number) => {
         setForm(prev => ({ ...prev, [field]: value }));
     };
 
+    // 제출 핸들러
     const handleSubmit = () => {
         onAdd({ ...form, id: 0 });
         setForm({ name: '', targetAmount: 0 });

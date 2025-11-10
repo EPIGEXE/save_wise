@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+      "composite": true,          // Project references를 위한 설정
       "target": "ES2020",         // ES2020 버전을 타겟으로 컴파일
       "module": "ES2020",         // ES2020 모듈 시스템을 사용
       "allowJs": true,            // JavaScript 파일eh 컴파일 대상에 포함
@@ -14,10 +15,11 @@
       "rootDir": ".",             // 소스파일의 루트 디렉토리 지정
       "paths": {                  // 모듈 경로 별칭 지정
         "*": ["node_modules/*"],
+        "@/*": ["./src/*"]
       },
       "experimentalDecorators": true, // 데코레이터 문법 사용 가능
       "emitDecoratorMetadata": true,  // 데코레이터 메타데이터 생성
       "strictPropertyInitialization": false // 클래스 프로퍼티 초기화 검사 비활성화
     },
-    "include": ["electron.ts"]     // TypeScript 컴파일러가 처리할 파일 지정
+    "include": ["electron.ts", "src/backend/**/*", "src/types/**/*"]     // TypeScript 컴파일러가 처리할 파일 지정
   }

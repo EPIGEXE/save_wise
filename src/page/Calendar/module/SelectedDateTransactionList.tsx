@@ -6,32 +6,25 @@ import { Separator } from "@/components/ui/separator";
 import { Plus } from "lucide-react";
 import moment from "moment";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CalendarTransaction } from "./MyCalendar";
 import { useAppDispatch } from "@/store/AppStore";
 import { setSelectedDate, setCurrentTransaction, setEditMode, setShowModal } from "../state/CalendarDataSlice";
+import { CalendarTransaction } from "../CalendarType";
 
-const SelectedDateTransactionList = ({ date, transactions }: { 
-    date: string, 
-    transactions: CalendarTransaction[] 
-}) => {
+// 선택된 날의 거래 리스트 카드 컴포넌트
+const SelectedDateTransactionList = ({ date, transactions }: { date: string; transactions: CalendarTransaction[] }) => {
+    // ========================================== Hooks ===========================================
     const dispatch = useAppDispatch();
-    
-    const totalIncome = transactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + (t.amount || 0), 0);
-    
-    const totalExpense = transactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    // ========================================== 상수 관리 ===========================================
+    const totalIncome = transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + (t.amount || 0), 0); // 총 수입 계산
+    const totalExpense = transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + (t.amount || 0), 0); // 총 지출 계산
 
     return (
         <Card className="border-none shadow-none">
             <CardHeader className="p-3 pb-1">
-                <CardTitle className="text-sm font-medium">
-                    {moment(date).format('YYYY년 MM월 DD일')}
-                </CardTitle>
+                <CardTitle className="text-sm font-medium">{moment(date).format("YYYY년 MM월 DD일")}</CardTitle>
             </CardHeader>
-            
+
             <div className="px-3 py-1 flex justify-between text-sm">
                 <div className="flex items-center gap-1 text-green-600">
                     <ArrowUpCircle className="w-4 h-4" />
@@ -42,9 +35,9 @@ const SelectedDateTransactionList = ({ date, transactions }: {
                     {totalExpense.toLocaleString()}원
                 </div>
             </div>
-            
+
             <Separator className="my-2" />
-            
+
             <CardContent className="p-0">
                 <ScrollArea className="h-[200px] px-3">
                     {transactions.map((transaction) => (
@@ -63,42 +56,44 @@ const SelectedDateTransactionList = ({ date, transactions }: {
                                     {transaction.description}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                    {transaction.fixedCostProspect ? '고정 비용' : 
-                                     transaction.paymentMethod?.name || '현금'}
+                                    {transaction.fixedCostProspect
+                                        ? "고정 비용"
+                                        : transaction.paymentMethod?.name || "현금"}
                                 </span>
                             </div>
-                            <span className={`text-sm font-medium ${
-                                transaction.type === 'income' 
-                                    ? 'text-green-600' 
-                                    : 'text-red-600'
-                            }`}>
-                                {transaction.type === 'income' ? '+' : '-'}
+                            <span
+                                className={`text-sm font-medium ${
+                                    transaction.type === "income" ? "text-green-600" : "text-red-600"
+                                }`}
+                            >
+                                {transaction.type === "income" ? "+" : "-"}
                                 {transaction.amount?.toLocaleString()}원
                             </span>
                         </div>
                     ))}
                 </ScrollArea>
             </CardContent>
-            
+
             <CardFooter className="p-3 pt-2">
-                <Button 
+                <Button
                     variant="outline"
                     className="w-full"
                     onClick={() => {
                         dispatch(setSelectedDate(date));
-                        dispatch(setCurrentTransaction({ 
-                            id: '', 
-                            amount: 0, 
-                            description: '', 
-                            type: 'expense', 
-                            paymentMethodId: null 
-                        }));
+                        dispatch(
+                            setCurrentTransaction({
+                                id: "",
+                                amount: 0,
+                                description: "",
+                                type: "expense",
+                                paymentMethodId: null,
+                            })
+                        );
                         dispatch(setEditMode(false));
                         dispatch(setShowModal(true));
                     }}
                 >
-                    <Plus className="w-4 h-4 mr-2" />
-                    새 거래 추가
+                    <Plus className="w-4 h-4 mr-2" />새 거래 추가
                 </Button>
             </CardFooter>
         </Card>

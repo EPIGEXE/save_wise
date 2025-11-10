@@ -2,9 +2,10 @@ import { DataSource } from "typeorm";
 import CreditCardSettlementService from "../service/CreditCardSettlementService.js";
 import { logger } from "../util/logger.js";
 
+// 신용카드 결제 처리 매니저
 export default class CreditCardSettlementManager {
-    private lastCheckedDate: number;
-    private settlementService: CreditCardSettlementService;
+    private lastCheckedDate: number; // 마지막 체크 날짜
+    private settlementService: CreditCardSettlementService; // 신용카드 결제 처리 서비스
 
     constructor(dataSource: DataSource) {
         this.settlementService = new CreditCardSettlementService(dataSource);
@@ -20,6 +21,7 @@ export default class CreditCardSettlementManager {
         setInterval(() => this.checkDateChange(), 1000 * 60); // 1분마다 체크
     }
 
+    // 날짜 변경 감지
     private async checkDateChange() {
         const currentDate = new Date().getDate();
 
@@ -30,6 +32,7 @@ export default class CreditCardSettlementManager {
         }
     }
 
+    // 신용카드 결제 처리
     private async processCreditCardSettlement(year: number, month: number): Promise<void> {
         try {
             await this.settlementService.processCreditCardSettlement(year, month);

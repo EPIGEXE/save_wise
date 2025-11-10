@@ -8,28 +8,33 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useAppSelector } from "@/store/AppStore";
 import { useAppDispatch } from "@/store/AppStore";
 import { resetTransaction, setCurrentTransaction, setShowModal } from "../state/CalendarDataSlice";
-import { CalendarTransaction } from "./MyCalendar";
+import { CalendarTransaction } from "../CalendarType";
 
 const { ipcRenderer } = window;
 
 type TransactionType = 'income' | 'expense';
 
+// 거래 다이얼로그 컴포넌트
 const TransactionDialog = ({ fetchTransaction }: { fetchTransaction: () => Promise<void> }) => {
+    // ========================================== 전역 상태 ===========================================
     const dispatch = useAppDispatch();
     const { 
-        showModal, 
-        editMode, 
-        selectedDate, 
-        currentTransaction,
-        paymentMethods,
-        incomeCategories,
-        expenseCategories
+        showModal, // 다이얼로그 열림 여부
+        editMode, // 수정 모드 여부
+        selectedDate, // 선택된 날짜
+        currentTransaction, // 현재 거래
+        paymentMethods, // 결제 방법들
+        incomeCategories, // 수입 카테고리들
+        expenseCategories, // 지출 카테고리들
     } = useAppSelector(state => state.calendarData);
 
+    // ========================================== 핸들러 ===========================================
+    // 다이얼로그 닫기
     const handleCloseModal = () => {
         dispatch(resetTransaction());
     };
     
+    // 거래 저장
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (currentTransaction.amount && selectedDate) {
@@ -51,11 +56,13 @@ const TransactionDialog = ({ fetchTransaction }: { fetchTransaction: () => Promi
         }
     };
 
+    // 거래 수정
     const handleTransactionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         dispatch(setCurrentTransaction(prev => ({ ...prev, [name]: name === 'amount' ? parseFloat(value) || 0 : value })));
     };
 
+    // 거래 유형 변경
     const handleTypeChange = (value: string) => {
         if (value === 'income' || value === 'expense') {  // 타입 가드
             dispatch(setCurrentTransaction(prev => ({
@@ -68,6 +75,7 @@ const TransactionDialog = ({ fetchTransaction }: { fetchTransaction: () => Promi
         }
     };
 
+    // 결제 방법 변경
     const handlePaymentMethodChange = (value: string) => {
         const selectedMethod = paymentMethods.find(method => method.id.toString() === value);
         dispatch(setCurrentTransaction(prev => ({
@@ -76,13 +84,14 @@ const TransactionDialog = ({ fetchTransaction }: { fetchTransaction: () => Promi
         })));
     };
 
-
+    // 거래 삭제
     const handleDeleteTransaction = async () => {
         await ipcRenderer.invoke('delete-transaction', currentTransaction);
         await fetchTransaction();
         handleCloseModal();
     }
 
+    // 거래 카테고리 변경
     const handleCategoryChange = (value: string) => {
         dispatch(setCurrentTransaction((prev: CalendarTransaction) => ({
             ...prev,

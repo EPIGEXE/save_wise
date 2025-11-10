@@ -3,7 +3,6 @@ import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "
 import { Label, Pie, PieChart } from "recharts";
 import { Separator } from "@/components/ui/separator";
 import { useEffect, useState } from "react";
-import { Goal } from "@/backend/db/entity/Goal";
 import { generateColorForCategory } from "@/utils/Utils";
 import { Check } from "lucide-react";
 import { Trash2 } from "lucide-react";
@@ -14,27 +13,35 @@ import { Input } from "@/components/ui/input";
 import AddGoalDialog from "./module/AddGoalDialog";
 import { CurrencyInput } from "@/components/custom/CurrencyInput";
 import { Badge } from "@/components/ui/badge";
+import { GoalItem } from "./GoalType";
+import { IGoal } from "@/types";
 
 const { ipcRenderer } = window.require('electron');
 
+// 목표 페이지  
 const GoalPage = () => {
-    const [goals, setGoals] = useState<Goal[]>([]);
-    const [goalChartConfig, setGoalChartConfig] = useState<ChartConfig>({});
+    // ========================================== 상태 정의 ==========================================
+    const [goals, setGoals] = useState<GoalItem[]>([]); // 목표 목록
+    const [goalChartConfig, setGoalChartConfig] = useState<ChartConfig>({}); // 목표 차트 설정
 
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // 수정 다이얼로그 열림 여부
     const [editForm, setEditForm] = useState({
-        name: '',
-        targetAmount: 0,
-    });
+        name: '', 
+        targetAmount: 0, 
+    }); // 설정 폼 값
 
+    // ========================================== useEffect ==========================================
+    // 목표 데이터 가져오기
     useEffect(() => {
         fetchGoals();
     }, []);
 
+    // ========================================== fetch ==========================================
+    // 목표 데이터 가져오기
     const fetchGoals = async () => {
         const goals = await ipcRenderer.invoke('get-all-goal');
 
-        const categories = goals.reduce((acc: Record<string, { color: string }>, item: Goal) => {
+        const categories = goals.reduce((acc: Record<string, { color: string }>, item: IGoal) => {
             if (!acc[item.name]) {
                 acc[item.name] = { color: generateColorForCategory(item.name) };
             }
@@ -43,7 +50,8 @@ const GoalPage = () => {
 
         setGoalChartConfig(categories as ChartConfig);
 
-        const updatedGoals = goals.map((item: Goal) => ({
+        // 목표 데이터 색상 설정
+        const updatedGoals = goals.map((item: IGoal) => ({
             ...item,
             fill: categories[item.name].color
         }));
@@ -51,21 +59,26 @@ const GoalPage = () => {
         setGoals(updatedGoals);
     }
 
+    // ========================================== 핸들러 ==========================================
+    // 설정 폼 변경 핸들러
     const handleEditFormChange = (field: string, value: string | number) => {
         setEditForm(prev => ({ ...prev, [field]: value }));
     };
 
+    // 저장 핸들러
     const handleSave = () => {
         ipcRenderer.invoke('update-goal', editForm);
         setIsEditDialogOpen(false);
         fetchGoals();
     };
 
-    const handleAddGoal = (data: Goal) => {
+    // 목표 추가 핸들러
+    const handleAddGoal = (data: IGoal) => {
         ipcRenderer.invoke('create-goal', data);
         fetchGoals();
     };
 
+    // 목표 삭제 핸들러
     const handleDelete = (id: number) => {
         ipcRenderer.invoke('delete-goal', id);
         fetchGoals();

@@ -1,17 +1,15 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CalendarTransaction } from "../module/MyCalendar";
-import { PaymentMethod } from "@/backend/db/entity/PaymentMethod";
-import { IncomeCategory } from "@/backend/db/entity/IncomeCategory";
-import { ExpenseCategory } from "@/backend/db/entity/ExpenseCategory";
+import { CalendarTransaction } from "../CalendarType";
+import { IExpenseCategory, IIncomeCategory, IPaymentMethod } from "@/types";
 
-interface CalendarDataState {
-    showModal: boolean;
-    editMode: boolean;
-    selectedDate: string;
-    currentTransaction: CalendarTransaction;
-    paymentMethods: PaymentMethod[];
-    incomeCategories: IncomeCategory[];
-    expenseCategories: ExpenseCategory[];
+export interface CalendarDataState {
+    showModal: boolean; // 다이얼로그 열림 여부
+    editMode: boolean; // 수정 모드 여부
+    selectedDate: string; // 선택된 날짜
+    currentTransaction: CalendarTransaction; // 현재 거래
+    paymentMethods: IPaymentMethod[]; // 결제 방법들
+    incomeCategories: IIncomeCategory[]; // 수입 카테고리들
+    expenseCategories: IExpenseCategory[]; // 지출 카테고리들
 }
 
 const initialState: CalendarDataState = {
@@ -55,13 +53,13 @@ const CalendarDataSlice = createSlice({
             state.editMode = false;
             state.showModal = false;
         },
-        setPaymentMethods: (state, action: PayloadAction<PaymentMethod[]>) => {
+        setPaymentMethods: (state, action: PayloadAction<IPaymentMethod[]>) => {
             state.paymentMethods = action.payload;
         },
-        setIncomeCategories: (state, action: PayloadAction<IncomeCategory[]>) => {
+        setIncomeCategories: (state, action: PayloadAction<IIncomeCategory[]>) => {
             state.incomeCategories = action.payload;
         },
-        setExpenseCategories: (state, action: PayloadAction<ExpenseCategory[]>) => {
+        setExpenseCategories: (state, action: PayloadAction<IExpenseCategory[]>) => {
             state.expenseCategories = action.payload;
         }
     }

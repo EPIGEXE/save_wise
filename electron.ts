@@ -21,7 +21,7 @@ async function createWindow() {
   })
 
   if (!app.isPackaged) {
-    win.loadURL('http://localhost:5173')
+    win.loadURL('http://localhost:5174')
   } else {
     // 실행 경로 확인을 위한 로그
     logger.info(`앱 경로: ${app.getAppPath()}`)

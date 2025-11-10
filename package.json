@@ -13,7 +13,7 @@
     "start": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "startEt": "concurrently \"vite\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && electron .\"",
+    "startEt": "concurrently \"vite\" \"wait-on http://localhost:5174 && tsc -p tsconfig.electron.json && electron .\"",
     "buildEt": "set NODE_ENV=production && tsc -p tsconfig.electron.json && vite build && electron-builder --config.asar=true",
     "preview": "vite preview"
   },

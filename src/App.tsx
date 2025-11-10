@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import './App.css'
 import { HashRouter, Route, Routes, useLocation } from 'react-router-dom';
 import Layout from './page/Layout/Layout';
 import SettingPage from './page/Setting/SettingPage';

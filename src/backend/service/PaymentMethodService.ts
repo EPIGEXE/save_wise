@@ -2,9 +2,11 @@ import { AppDataSource } from "../db/database.js";
 import { PaymentMethod } from "../db/entity/PaymentMethod.js";
 import { logger } from "../util/logger.js";
 
+// 결제 방법 서비스
 export default class PaymentMethodService {
-    private paymentMethodRepository = AppDataSource.getRepository(PaymentMethod)
+    private paymentMethodRepository = AppDataSource.getRepository(PaymentMethod); // 결제 방법 저장소
 
+    // 모든 결제 방법 조회
     async getAllPaymentMethod(): Promise<PaymentMethod[]> {
         try {
             // logger.info("결제 방법 목록 조회 시작");
@@ -17,6 +19,7 @@ export default class PaymentMethodService {
         }
     }
 
+    // 결제 방법 생성
     async createPaymentMethod(paymentMethod: PaymentMethod): Promise<PaymentMethod> {
         try {
             // logger.info("새 결제 방법 생성 시작", { data: paymentMethod });
@@ -30,6 +33,7 @@ export default class PaymentMethodService {
         }
     }
     
+    // 결제 방법 수정
     async updatePaymentMethod(paymentMethod: PaymentMethod): Promise<void> {
         try {
             // logger.info("결제 방법 수정 시작", { data: paymentMethod });
@@ -41,6 +45,7 @@ export default class PaymentMethodService {
         }
     }
 
+    // 결제 방법 삭제
     async deletePaymentMethod(paymentMethod: PaymentMethod): Promise<void> {
             try {
             // logger.info("결제 방법 삭제 시작", { id: paymentMethod.id });

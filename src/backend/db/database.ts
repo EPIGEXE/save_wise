@@ -1,45 +1,47 @@
-import { DataSource } from "typeorm"
-import { Transaction } from "./entity/Transaction.js"
-import path from 'path'
-import { app } from 'electron'
-import { PaymentMethod } from "./entity/PaymentMethod.js"
-import { Asset } from "./entity/Asset.js"
-import { IncomeCategory } from "./entity/IncomeCategory.js"
-import { ExpenseCategory } from "./entity/ExpenseCategory.js"
-import { CreditCardSettlement } from "./entity/CreditCardSettlement.js"
-import { FixedCost } from "./entity/FixedCost.js"
-import { Goal } from "./entity/Goal.js"
+import { DataSource } from "typeorm";
+import { Transaction } from "./entity/Transaction.js";
+import path from "path";
+import { app } from "electron";
+import { PaymentMethod } from "./entity/PaymentMethod.js";
+import { Asset } from "./entity/Asset.js";
+import { IncomeCategory } from "./entity/IncomeCategory.js";
+import { ExpenseCategory } from "./entity/ExpenseCategory.js";
+import { CreditCardSettlement } from "./entity/CreditCardSettlement.js";
+import { FixedCost } from "./entity/FixedCost.js";
+import { Goal } from "./entity/Goal.js";
 
-const dbPath = path.join(app.getPath('userData'), 'database.sqlite')
+const dbPath = path.join(app.getPath("userData"), "database.sqlite");
 
+// 데이터베이스 소스
 export const AppDataSource = new DataSource({
-  type: "sqljs",
-  location: dbPath,
-  autoSave: true,
-  entities: [
-    Transaction,
-    PaymentMethod,
-    Asset,
-    IncomeCategory,
-    ExpenseCategory,
-    CreditCardSettlement,
-    FixedCost,
-    Goal
-  ],
-  synchronize: true,
-  logging: false,
-  // logger: "advanced-console"
-})
+    type: "sqljs",
+    location: dbPath,
+    autoSave: true,
+    entities: [
+        Transaction,
+        PaymentMethod,
+        Asset,
+        IncomeCategory,
+        ExpenseCategory,
+        CreditCardSettlement,
+        FixedCost,
+        Goal,
+    ],
+    synchronize: true,
+    logging: false,
+    // logger: "advanced-console"
+});
 
+// 데이터베이스 초기화
 export const initializeDatabase = async () => {
-  try {
-    await AppDataSource.initialize()
-    console.log("데이터베이스 연결 성공")
-    return AppDataSource
-  } catch (error) {
-    console.error("데이터베이스 연결 실패:", error)
-    throw error
-  }
-}
+    try {
+        await AppDataSource.initialize();
+        console.log("데이터베이스 연결 성공");
+        return AppDataSource;
+    } catch (error) {
+        console.error("데이터베이스 연결 실패:", error);
+        throw error;
+    }
+};
 
-export default { AppDataSource, initializeDatabase }
+export default { AppDataSource, initializeDatabase };

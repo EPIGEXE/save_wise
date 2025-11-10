@@ -2,9 +2,11 @@ import { AppDataSource } from "../db/database.js";
 import { Asset } from "../db/entity/Asset.js";
 import { logger } from "../util/logger.js";
 
+// 자산 서비스
 export default class AssetService {
     private assetRepository = AppDataSource.getRepository(Asset)
 
+    // 모든 자산 조회
     async getAllAssets(): Promise<Asset[]> {
         try {
             // logger.info("자산 목록 조회 시작");
@@ -16,6 +18,7 @@ export default class AssetService {
         }
     }
 
+    // 자산 생성
     async createAsset(asset: Asset): Promise<Asset> {
         try {
             // logger.info("새 자산 생성 시작", { data: asset });
@@ -29,6 +32,7 @@ export default class AssetService {
         }
     }
 
+    // 자산 수정
     async updateAsset(asset: Asset): Promise<void> {
         try {
             // logger.info("자산 수정 시작", { data: asset });
@@ -40,6 +44,7 @@ export default class AssetService {
         }
     }
 
+    // 자산 삭제
     async deleteAsset(asset: Asset): Promise<void> {
         try {
             // logger.info("자산 삭제 시작", { id: asset.id });

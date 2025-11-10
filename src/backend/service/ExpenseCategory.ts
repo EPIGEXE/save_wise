@@ -3,10 +3,12 @@ import { ExpenseCategory } from "../db/entity/ExpenseCategory.js";
 import { Goal } from "../db/entity/Goal.js";
 import { logger } from "../util/logger.js";
 
+// 지출 카테고리 서비스
 export default class ExpenseCategoryService {
-    private expenseCategoryRepository = AppDataSource.getRepository(ExpenseCategory)
-    private goalRepository = AppDataSource.getRepository(Goal)
+    private expenseCategoryRepository = AppDataSource.getRepository(ExpenseCategory) // 지출 카테고리 저장소
+    private goalRepository = AppDataSource.getRepository(Goal) // 목표 저장소
 
+    // 모든 지출 카테고리 조회
     async getAllExpenseCategories(): Promise<ExpenseCategory[]> {
         try {
             // logger.info("카테고리 조회 시작");
@@ -17,6 +19,7 @@ export default class ExpenseCategoryService {
         }
     }
 
+    // 지출 카테고리 생성
     async createExpenseCategory(expenseCategory: ExpenseCategory): Promise<ExpenseCategory> {
         try {
             const result = await AppDataSource.transaction(async transactionalEntityManager => {
@@ -41,6 +44,7 @@ export default class ExpenseCategoryService {
         }
     }
 
+    // 지출 카테고리 수정
     async updateExpenseCategory(expenseCategory: ExpenseCategory): Promise<void> {
         try {
             // logger.info("카테고리 수정 시작", { data: expenseCategory });
@@ -52,6 +56,7 @@ export default class ExpenseCategoryService {
         }
     }
 
+    // 지출 카테고리 삭제
     async deleteExpenseCategory(expenseCategory: ExpenseCategory): Promise<void> {
         try {
             // logger.info("카테고리 삭제 시작", { id });

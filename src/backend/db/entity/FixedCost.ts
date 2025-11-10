@@ -1,42 +1,44 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Transaction } from "typeorm";
 import type { IncomeCategory } from "./IncomeCategory.js";
 import type { ExpenseCategory } from "./ExpenseCategory.js";
+import { IFixedCost } from "@/types/index.js";
 
+// 고정 비용 엔티티
 @Entity()
-export class FixedCost {
+export class FixedCost implements IFixedCost {
     @PrimaryGeneratedColumn()
-    id!: number;
+    id!: number; // 고정 비용 ID
 
     @Column()
-    name!: string;
+    name!: string; // 고정 비용 이름
 
     @Column()
-    prospectDay!: number;
+    prospectDay!: number; // 고정 비용 예정 날짜
 
     @Column()
-    amount!: number;
+    amount!: number; // 고정 비용 금액
 
     @Column()
-    type!: "expense" | "income";
+    type!: "expense" | "income"; // 고정 비용 유형
 
     @Column({ nullable: true })
-    incomeCategoryId?: number;
+    incomeCategoryId?: number; // 수입 카테고리 ID
 
     @ManyToOne('IncomeCategory', 'fixedCosts', {  
         onDelete: 'SET NULL'
     })
     @JoinColumn({ name: 'incomeCategoryId' })
-    incomeCategory?: IncomeCategory;
+    incomeCategory?: IncomeCategory; // 수입 카테고리
 
     @Column({ nullable: true })
-    expenseCategoryId?: number;
+    expenseCategoryId?: number; // 지출 카테고리 ID
 
-    @ManyToOne('ExpenseCategory', 'fixedCosts', {  // 문자열로 엔티티 지정
+    @ManyToOne('ExpenseCategory', 'fixedCosts', {
         onDelete: 'SET NULL'
     })
     @JoinColumn({ name: 'expenseCategoryId' })
-    expenseCategory?: ExpenseCategory;
+    expenseCategory?: ExpenseCategory; // 지출 카테고리
 
     @OneToMany('Transaction', 'fixedCost')
-    transactions?: Transaction[];
+    transactions?: Transaction[]; // 고정 비용 거래 내역
 }

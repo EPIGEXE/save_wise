@@ -1,22 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Categories, EditingCategoryId, NewCategoryName } from '../SettingType';
 
-const { ipcRenderer } = window.require('electron');
+const { ipcRenderer } = window;
 
+// 카테고리 설정
 const CategorySetting = () => {
-    const [categories, setCategories] = useState({ income: [], expense: [] });
-    const [newCategoryName, setNewCategoryName] = useState({ income: '', expense: '' });
-    const [editingCategoryId, setEditingCategoryId] = useState({ income: null, expense: null });
+    // ========================================== 상태 정의 ==========================================
+    const [categories, setCategories] = useState<Categories>({ income: [], expense: [] }); // 카테고리 목록
+    const [newCategoryName, setNewCategoryName] = useState<NewCategoryName>({ income: '', expense: '' }); // 새 카테고리 이름
+    const [editingCategoryId, setEditingCategoryId] = useState<EditingCategoryId>({ income: null, expense: null }); // 수정 중인 카테고리 ID
 
+    // ========================================== useEffect ==========================================
+    // 카테고리 데이터 가져오기
     useEffect(() => {
         fetchCategories('income');
         fetchCategories('expense');
     }, []);
 
-    const fetchCategories = async (type) => {
+    // ========================================== fetch ==========================================
+    // 카테고리 데이터 가져오기
+    const fetchCategories = async (type: 'income' | 'expense') => {
         try {
             const fetchedCategories = await ipcRenderer.invoke(`get-all-${type}category`);
             setCategories(prev => ({ ...prev, [type]: fetchedCategories }));
@@ -25,7 +32,7 @@ const CategorySetting = () => {
         }
     };
 
-    const handleAddCategory = async (type) => {
+    const handleAddCategory = async (type: 'income' | 'expense') => {
         if (newCategoryName[type].trim()) {
             try {
                 await ipcRenderer.invoke(`create-${type}category`, { name: newCategoryName[type] });
@@ -37,7 +44,7 @@ const CategorySetting = () => {
         }
     };
 
-    const handleEditCategory = async (type, id, newName) => {
+    const handleEditCategory = async (type: 'income' | 'expense', id: number, newName: string) => {
         try {
             await ipcRenderer.invoke(`update-${type}category`, { id, name: newName });
             setEditingCategoryId(prev => ({ ...prev, [type]: null }));
@@ -47,7 +54,7 @@ const CategorySetting = () => {
         }
     };
 
-    const handleDeleteCategory = async (type, id) => {
+    const handleDeleteCategory = async (type: 'income' | 'expense', id: number) => {
         try {
             await ipcRenderer.invoke(`delete-${type}category`, id);
             fetchCategories(type);
@@ -56,7 +63,7 @@ const CategorySetting = () => {
         }
     };
 
-    const renderCategorySection = (type) => (
+    const renderCategorySection = (type: 'income' | 'expense') => (
         <div className={type === 'income' ? "pr-4 border-r border-gray-300" : "pl-4"}>
             <h4 className="text-md font-semibold mb-2">{type === 'income' ? '수입' : '지출'} 카테고리</h4>
             <div className="flex mb-4">
@@ -85,10 +92,10 @@ const CategorySetting = () => {
                                 <Input
                                     type="text"
                                     defaultValue={category.name}
-                                    onBlur={(e) => handleEditCategory(type, category.id, e.target.value)}
+                                    onBlur={(e) => handleEditCategory(type, category.id, e.currentTarget.value)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
-                                            handleEditCategory(type, category.id, e.target.value);
+                                            handleEditCategory(type, category.id, e.currentTarget.value);
                                         }
                                     }}
                                     autoFocus

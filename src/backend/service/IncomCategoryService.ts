@@ -2,9 +2,11 @@ import { AppDataSource } from "../db/database.js";
 import { IncomeCategory } from "../db/entity/IncomeCategory.js";
 import { logger } from "../util/logger.js";
 
+// 수입 카테고리 서비스
 export default class IncomeCategoryService {
-    private incomeCategoryRepository = AppDataSource.getRepository(IncomeCategory)
+    private incomeCategoryRepository = AppDataSource.getRepository(IncomeCategory); // 수입 카테고리 저장소
 
+    // 모든 수입 카테고리 조회
     async getAllIncomeCategories(): Promise<IncomeCategory[]> {
         try {
             // logger.info("카테고리 조회 시작");
@@ -16,6 +18,7 @@ export default class IncomeCategoryService {
         }
     }
 
+    // 수입 카테고리 생성
     async createIncomeCategory(incomeCategory: IncomeCategory): Promise<IncomeCategory> {
         try {
             // logger.info("카테고리 생성 시작", { data: incomeCategory });
@@ -29,6 +32,7 @@ export default class IncomeCategoryService {
         }
     }
 
+    // 수입 카테고리 수정
     async updateIncomeCategory(incomeCategory: IncomeCategory): Promise<void> {
         try {
             // logger.info("카테고리 수정 시작", { data: incomeCategory });
@@ -40,6 +44,7 @@ export default class IncomeCategoryService {
         }
     }
 
+    // 수입 카테고리 삭제
     async deleteIncomeCategory(incomeCategory: IncomeCategory): Promise<void> {
         try {
             // logger.info("카테고리 삭제 시작", { id });
