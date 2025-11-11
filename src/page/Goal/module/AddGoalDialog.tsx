@@ -5,6 +5,7 @@ import { PlusCircle } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/custom/CurrencyInput";
+import { IGoal } from "@/types";
 
 // 목표 추가 다이얼로그
 const AddGoalDialog = ({ onAdd }: { onAdd: (data: IGoal) => void }) => {

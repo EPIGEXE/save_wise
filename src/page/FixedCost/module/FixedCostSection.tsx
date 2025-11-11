@@ -6,6 +6,7 @@ import { Pie, PieChart } from "recharts";
 import { useEffect, useState } from "react";
 import type { FixedCostItem as FixedCostItemType } from "../FixedCostType";
 import { FixedCostItem } from "./FixedCostItem";
+import { IFixedCost } from "@/types";
 
 interface FixedCostSectionProps {
     data: FixedCostItemType[];
@@ -13,7 +14,7 @@ interface FixedCostSectionProps {
     chartConfig: ChartConfig;
     dateOptions: number[];
     onAdd: (data: { name: string; amount: number; prospectDay: number; type: "income" | "expense" }) => void;
-    onUpdate: (id: number, data: Partial<FixedCost>) => void;
+    onUpdate: (id: number, data: Partial<IFixedCost>) => void;
     onDelete: (id: number, type: "income" | "expense") => void;
 }
 
